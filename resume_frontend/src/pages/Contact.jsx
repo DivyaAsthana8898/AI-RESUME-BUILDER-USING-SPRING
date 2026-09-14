@@ -12,10 +12,12 @@ function Contact() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+
     setLoading(true);
     setStatus("");
 
-    const form = e.target;
+    const form = e.currentTarget;
     const formData = new FormData(form);
 
     try {
@@ -30,10 +32,12 @@ function Contact() {
         setStatus("Message sent successfully! ✅");
         form.reset();
       } else {
-        setStatus("Something went wrong. Please try again. ❌");
+        setStatus(
+          data.message || "Something went wrong. Please try again. ❌"
+        );
       }
     } catch (error) {
-      console.error(error);
+      console.error("Web3Forms Error:", error);
       setStatus("Unable to send message. Please try again. ❌");
     } finally {
       setLoading(false);
@@ -42,7 +46,7 @@ function Contact() {
 
   return (
     <div className="min-h-screen bg-base-100 text-base-content px-6 py-16">
-      
+
       {/* Header */}
       <div className="max-w-4xl mx-auto text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-bold mb-4">
@@ -158,6 +162,7 @@ function Contact() {
                 name="name"
                 placeholder="Enter your name"
                 required
+                autoComplete="name"
                 className="input input-bordered w-full bg-base-100 focus:outline-none focus:border-primary"
               />
             </div>
@@ -173,6 +178,7 @@ function Contact() {
                 name="email"
                 placeholder="Enter your email"
                 required
+                autoComplete="email"
                 className="input input-bordered w-full bg-base-100 focus:outline-none focus:border-primary"
               />
             </div>
@@ -205,7 +211,13 @@ function Contact() {
 
             {/* Status */}
             {status && (
-              <p className="text-center text-sm font-medium mt-3">
+              <p
+                className={`text-center text-sm font-medium mt-3 ${
+                  status.includes("successfully")
+                    ? "text-success"
+                    : "text-error"
+                }`}
+              >
                 {status}
               </p>
             )}
