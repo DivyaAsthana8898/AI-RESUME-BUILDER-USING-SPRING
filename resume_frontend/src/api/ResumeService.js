@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const baseURLL = "http://localhost:8080";
+export const baseURL = "https://ai-resume-builder-using-spring.onrender.com";
 
 export const axiosInstance = axios.create({
   baseURL: baseURLL,
