@@ -1,53 +1,184 @@
-Generate a professional IT job resume in JSON format based on the following description. Ensure the JSON is consistent, well-structured, and contains all specified keys, even if some values are empty or null. Use the exact keys provided below and maintain their hierarchy.
+You are an AI resume generator.
 
-Input Description:
+Generate a professional IT job resume from the user's description.
+
+IMPORTANT OUTPUT RULES:
+1. Return ONLY valid JSON.
+2. Do NOT use markdown.
+3. Do NOT use ```json or ``` fences.
+4. Do NOT add explanations before or after the JSON.
+5. The response must start with { and end with }.
+6. The JSON must be complete and properly closed.
+7. Use double quotes for all JSON keys and string values.
+8. Never use trailing commas.
+9. All arrays must be properly opened and closed.
+10. If information is missing, use an empty string "", null, or an empty array [] as appropriate.
+11. Do not invent personal contact information.
+12. Make sure the final response is valid JSON that can be directly parsed using Jackson ObjectMapper.
+
+USER DESCRIPTION:
 "{{userDescription}}"
 
-JSON Structure Requirements:
-personalInformation: Include the following keys:
-fullName (string)
-email (string)
-phoneNumber (string)
-location (string)
-linkedIn (string or null if not provided)
-gitHub (string or null if not provided)
-portfolio (string or null if not provided)
-summary: A brief overview of skills, experience, and career goals (string).
-skills: List of object that contain two keys 'title' and 'level'
+RETURN EXACTLY THIS JSON STRUCTURE:
 
-experience: A list of job roles. Each job role should include:
-jobTitle (string)
-company (string)
-location (string)
-duration (string, e.g., "Jan 2020 - Present")
-responsibility(string)
+{
+  "personalInformation": {
+    "fullName": "",
+    "email": "",
+    "phoneNumber": "",
+    "location": "",
+    "linkedIn": null,
+    "gitHub": null,
+    "portfolio": null
+  },
+  "summary": "",
+  "skills": [
+    {
+      "title": "",
+      "level": ""
+    }
+  ],
+  "experience": [
+    {
+      "jobTitle": "",
+      "company": "",
+      "location": "",
+      "duration": "",
+      "responsibility": ""
+    }
+  ],
+  "education": [
+    {
+      "degree": "",
+      "university": "",
+      "location": "",
+      "graduationYear": ""
+    }
+  ],
+  "certifications": [
+    {
+      "title": "",
+      "issuingOrganization": "",
+      "year": ""
+    }
+  ],
+  "projects": [
+    {
+      "title": "",
+      "description": "",
+      "technologiesUsed": [],
+      "githubLink": null
+    }
+  ],
+  "achievements": [
+    {
+      "title": "",
+      "year": "",
+      "extraInformation": ""
+    }
+  ],
+  "languages": [
+    {
+      "id": 1,
+      "name": ""
+    }
+  ],
+  "interests": [
+    {
+      "id": 1,
+      "name": ""
+    }
+  ]
+}
 
-education: A list of degrees. Each degree should include:
-degree (string)
-university (string)
-location (string)
-graduationYear (string)
+FIELD RULES:
 
-certifications: A list of certifications. Each certification should include:
-title (string)
-issuingOrganization (string)
-year (string)
+personalInformation:
+- fullName must be a string.
+- email must be a string.
+- phoneNumber must be a string.
+- location must be a string.
+- linkedIn must be a string or null.
+- gitHub must be a string or null.
+- portfolio must be a string or null.
 
-projects: A list of key projects. Each project should include:
-title (string)
-description (string)
-technologiesUsed (array of strings)
-githubLink (string or null if not provided)
+summary:
+- Must be a string.
+- Write a concise professional summary based only on the user's description.
 
-achievements: A list achievements that contains objects of keys
-title (string)
-year(string)
-extraInformation(string)
+skills:
+- Must always be an array.
+- Every skill object must contain exactly:
+  "title" and "level".
+- level can be Beginner, Intermediate, Advanced, or Expert.
 
-languages: A list of spoken languages objects contain keys
-id(number)
-name(string)
+experience:
+- Must always be an array.
+- Every object must contain:
+  "jobTitle",
+  "company",
+  "location",
+  "duration",
+  "responsibility".
 
-interests: A list of additional interests or hobbies related to technology or professional development  [list of objects having keys].
-id(number)
-name(string)
+education:
+- Must always be an array.
+- Every object must contain:
+  "degree",
+  "university",
+  "location",
+  "graduationYear".
+
+certifications:
+- Must always be an array.
+- Every object must contain:
+  "title",
+  "issuingOrganization",
+  "year".
+
+projects:
+- Must always be an array.
+- Every project must contain:
+  "title",
+  "description",
+  "technologiesUsed",
+  "githubLink".
+- technologiesUsed MUST ALWAYS be an array of strings.
+- Example:
+  "technologiesUsed": ["Java", "Spring Boot", "React.js"]
+- If technologies are not provided, use:
+  "technologiesUsed": []
+- githubLink must be a string or null.
+
+achievements:
+- Must always be an array.
+- Every achievement must contain:
+  "title",
+  "year",
+  "extraInformation".
+- If no achievements are mentioned, return [].
+
+languages:
+- Must always be an array.
+- Every language must contain:
+  "id" as a number and "name" as a string.
+- IDs must start from 1 and increment by 1.
+- If no languages are mentioned, return [].
+
+interests:
+- Must always be an array.
+- Every interest must contain:
+  "id" as a number and "name" as a string.
+- IDs must start from 1 and increment by 1.
+- If no interests are mentioned, return [].
+
+FINAL VALIDATION:
+Before returning the response, verify that:
+- Every { has a matching }.
+- Every [ has a matching ].
+- Every string is closed with ".
+- There are no trailing commas.
+- The complete response is valid JSON.
+- There is nothing outside the JSON object.
+
+Return ONLY the final JSON object.
