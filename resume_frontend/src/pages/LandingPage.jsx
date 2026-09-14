@@ -11,27 +11,41 @@ import {
   FaCheckCircle,
   FaStar,
   FaEdit,
+  FaBolt,
+  FaUserTie,
 } from "react-icons/fa";
 
 const LandingPage = () => {
   return (
-    <div className="min-h-screen bg-[#050816] text-white overflow-hidden">
+    <div className="min-h-screen bg-[#020617] text-white overflow-hidden">
 
-      {/* ================= HERO ================= */}
+      {/* =========================================================
+          GLOBAL BACKGROUND
+      ========================================================= */}
+
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-cyan-500/10 blur-[120px]" />
+
+        <div className="absolute top-[20%] -right-40 w-[600px] h-[600px] rounded-full bg-violet-600/10 blur-[140px]" />
+
+        <div className="absolute bottom-0 left-[30%] w-[500px] h-[500px] rounded-full bg-blue-600/10 blur-[140px]" />
+
+      </div>
+
+      {/* =========================================================
+          HERO
+      ========================================================= */}
+
       <section className="relative min-h-screen flex items-center">
-
-        {/* Background Glow */}
-        <div className="absolute top-[-200px] left-[-150px] w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[140px]" />
-        <div className="absolute top-[100px] right-[-150px] w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[140px]" />
-        <div className="absolute bottom-[-200px] left-[35%] w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[150px]" />
 
         {/* Grid */}
         <div
-          className="absolute inset-0 opacity-[0.08]"
+          className="absolute inset-0 opacity-[0.06]"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(255,255,255,.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.15) 1px, transparent 1px)",
-            backgroundSize: "50px 50px",
+              "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
+            backgroundSize: "45px 45px",
           }}
         />
 
@@ -39,48 +53,82 @@ const LandingPage = () => {
 
           <div className="grid lg:grid-cols-2 gap-16 items-center">
 
-            {/* LEFT */}
+            {/* ================= LEFT ================= */}
+
             <div>
 
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-blue-400/20 bg-blue-500/10 text-blue-300 text-sm mb-7 backdrop-blur-md">
-                <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-                AI-Powered Resume Builder
+              {/* Badge */}
+
+              <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-cyan-400/20 bg-cyan-400/5 backdrop-blur-xl text-cyan-300 text-sm mb-8">
+
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400" />
+                </span>
+
+                AI Resume Intelligence
+
               </div>
 
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight">
-                Build Your
-                <span className="block bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-400 bg-clip-text text-transparent">
-                  Future Resume.
+              {/* Heading */}
+
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-black leading-[1.02] tracking-tight">
+
+                Your Career.
+
+                <span className="block mt-2">
+                  Your Story.
                 </span>
+
+                <span className="block mt-2 bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-500 bg-clip-text text-transparent">
+                  Powered by AI.
+                </span>
+
               </h1>
 
-              <p className="mt-7 text-lg md:text-xl text-gray-400 max-w-xl leading-relaxed">
-                Transform your skills, experience and achievements into a
-                professional resume using the power of Artificial Intelligence.
+              {/* Description */}
+
+              <p className="mt-7 text-gray-400 text-lg md:text-xl leading-8 max-w-xl">
+
+                Turn your skills, experience and achievements into a
+                professional, job-ready resume in minutes.
+
               </p>
+
+              {/* Buttons */}
 
               <div className="flex flex-wrap gap-4 mt-9">
 
-                {/* IMPORTANT: This link stays exactly /generate-resume */}
+                {/* KEEP THIS ROUTE */}
                 <Link
                   to="/generate-resume"
-                  className="group inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-7 h-14 rounded-xl text-base font-semibold shadow-lg shadow-blue-600/20 hover:scale-105 transition-all"
+                  className="group relative inline-flex items-center gap-3 px-7 h-14 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-violet-600 font-semibold shadow-[0_0_40px_rgba(59,130,246,0.25)] hover:shadow-[0_0_55px_rgba(59,130,246,0.4)] hover:-translate-y-1 transition-all duration-300"
                 >
+
                   <FaMagic />
+
                   Generate Resume
+
                   <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
+
                 </Link>
 
                 <Link
                   to="/about"
-                  className="inline-flex items-center justify-center h-14 px-7 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all"
+                  className="inline-flex items-center gap-2 px-7 h-14 rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl text-gray-200 hover:bg-white/[0.08] hover:border-cyan-400/20 transition-all"
                 >
-                  Explore More
+
+                  Explore Platform
+
+                  <FaArrowRight className="text-sm" />
+
                 </Link>
 
               </div>
 
-              <div className="flex flex-wrap gap-6 mt-9 text-sm text-gray-400">
+              {/* Trust */}
+
+              <div className="flex flex-wrap gap-6 mt-9 text-sm text-gray-500">
 
                 <div className="flex items-center gap-2">
                   <FaCheckCircle className="text-cyan-400" />
@@ -89,146 +137,239 @@ const LandingPage = () => {
 
                 <div className="flex items-center gap-2">
                   <FaCheckCircle className="text-cyan-400" />
-                  Professional Format
+                  Editable
                 </div>
 
                 <div className="flex items-center gap-2">
                   <FaCheckCircle className="text-cyan-400" />
-                  Easy to Edit
+                  PDF Ready
                 </div>
 
               </div>
 
             </div>
 
-            {/* RIGHT VISUAL */}
+            {/* ================= RIGHT ================= */}
+
             <div className="relative flex justify-center">
 
-              <div className="absolute w-[400px] h-[400px] bg-blue-600/20 rounded-full blur-[100px]" />
+              {/* Glow */}
 
-              <div className="relative w-full max-w-lg">
+              <div className="absolute w-[450px] h-[450px] rounded-full bg-blue-500/20 blur-[120px]" />
 
-                <div className="rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-2xl shadow-2xl p-5">
+              {/* Main Card */}
 
-                  {/* Browser Header */}
-                  <div className="flex items-center gap-2 px-2 pb-5">
+              <div className="relative w-full max-w-xl">
 
-                    <div className="w-3 h-3 rounded-full bg-red-400/80" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-400/80" />
-                    <div className="w-3 h-3 rounded-full bg-green-400/80" />
+                <div className="relative rounded-[30px] border border-white/10 bg-white/[0.045] backdrop-blur-2xl p-5 shadow-2xl">
 
-                    <div className="ml-auto text-xs text-gray-500">
-                      AI Resume Builder
+                  {/* Top Bar */}
+
+                  <div className="flex items-center justify-between px-3 pb-5">
+
+                    <div className="flex gap-2">
+
+                      <div className="w-3 h-3 rounded-full bg-red-400" />
+                      <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                      <div className="w-3 h-3 rounded-full bg-green-400" />
+
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+
+                      <FaBrain className="text-cyan-400" />
+
+                      AI Resume Engine
+
                     </div>
 
                   </div>
 
-                  {/* Resume Preview */}
-                  <div className="bg-[#0c1224] rounded-2xl p-6 border border-white/10">
+                  {/* Resume */}
 
-                    <div className="flex items-center gap-4 mb-7">
+                  <div className="rounded-2xl bg-[#080f20] border border-white/10 p-7">
 
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                        <FaBrain className="text-2xl" />
-                      </div>
+                    {/* Profile */}
 
-                      <div>
-                        <div className="h-3 w-36 bg-white/70 rounded mb-2" />
-                        <div className="h-2 w-24 bg-white/20 rounded" />
-                      </div>
+                    <div className="flex items-center gap-5">
 
-                    </div>
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
 
-                    <div className="space-y-6">
-
-                      <div>
-
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="w-2 h-2 rounded-full bg-blue-400" />
-                          <div className="h-2 w-24 bg-white/40 rounded" />
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className="h-2 bg-white/10 rounded w-full" />
-                          <div className="h-2 bg-white/10 rounded w-11/12" />
-                          <div className="h-2 bg-white/10 rounded w-4/5" />
-                        </div>
+                        <FaUserTie className="text-2xl" />
 
                       </div>
 
-                      <div>
+                      <div className="flex-1">
 
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="w-2 h-2 rounded-full bg-purple-400" />
-                          <div className="h-2 w-28 bg-white/40 rounded" />
-                        </div>
+                        <div className="h-3.5 w-44 bg-white/80 rounded-full mb-3" />
 
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="h-8 rounded-lg bg-blue-500/10 border border-blue-400/10" />
-                          <div className="h-8 rounded-lg bg-purple-500/10 border border-purple-400/10" />
-                          <div className="h-8 rounded-lg bg-cyan-500/10 border border-cyan-400/10" />
-                        </div>
-
-                      </div>
-
-                      <div>
-
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="w-2 h-2 rounded-full bg-cyan-400" />
-                          <div className="h-2 w-20 bg-white/40 rounded" />
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className="h-2 bg-white/10 rounded w-full" />
-                          <div className="h-2 bg-white/10 rounded w-3/4" />
-                        </div>
+                        <div className="h-2.5 w-28 bg-white/20 rounded-full" />
 
                       </div>
 
                     </div>
 
-                  </div>
-                </div>
+                    {/* Divider */}
 
-                {/* AI Badge */}
-                <div className="absolute -right-5 top-20 px-4 py-3 rounded-xl bg-[#111a32]/90 border border-blue-400/20 backdrop-blur-xl shadow-xl">
+                    <div className="h-px bg-white/10 my-7" />
 
-                  <div className="flex items-center gap-3">
-                    <FaBrain className="text-blue-400" />
+                    {/* Summary */}
+
+                    <div className="mb-7">
+
+                      <div className="flex items-center gap-3 mb-4">
+
+                        <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
+
+                        <div className="h-2.5 w-28 bg-white/50 rounded-full" />
+
+                      </div>
+
+                      <div className="space-y-2">
+
+                        <div className="h-2 bg-white/10 rounded-full w-full" />
+                        <div className="h-2 bg-white/10 rounded-full w-11/12" />
+                        <div className="h-2 bg-white/10 rounded-full w-4/5" />
+
+                      </div>
+
+                    </div>
+
+                    {/* Skills */}
+
+                    <div className="mb-7">
+
+                      <div className="flex items-center gap-3 mb-4">
+
+                        <div className="w-2 h-2 rounded-full bg-blue-400" />
+
+                        <div className="h-2.5 w-20 bg-white/50 rounded-full" />
+
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+
+                        <div className="px-4 py-2 rounded-lg bg-cyan-400/10 border border-cyan-400/10 text-xs text-cyan-300">
+                          React
+                        </div>
+
+                        <div className="px-4 py-2 rounded-lg bg-blue-400/10 border border-blue-400/10 text-xs text-blue-300">
+                          Java
+                        </div>
+
+                        <div className="px-4 py-2 rounded-lg bg-violet-400/10 border border-violet-400/10 text-xs text-violet-300">
+                          Spring Boot
+                        </div>
+
+                        <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-400">
+                          AI
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                    {/* Experience */}
 
                     <div>
-                      <p className="text-xs text-gray-400">
-                        AI Analysis
-                      </p>
 
-                      <p className="text-sm font-semibold">
-                        Resume Optimized
-                      </p>
+                      <div className="flex items-center gap-3 mb-4">
+
+                        <div className="w-2 h-2 rounded-full bg-violet-400" />
+
+                        <div className="h-2.5 w-28 bg-white/50 rounded-full" />
+
+                      </div>
+
+                      <div className="space-y-2">
+
+                        <div className="h-2 bg-white/10 rounded-full w-full" />
+                        <div className="h-2 bg-white/10 rounded-full w-10/12" />
+
+                      </div>
+
                     </div>
+
+                  </div>
+
+                  {/* AI Processing */}
+
+                  <div className="mt-5 flex items-center justify-between rounded-xl bg-cyan-400/5 border border-cyan-400/10 p-4">
+
+                    <div className="flex items-center gap-3">
+
+                      <div className="w-9 h-9 rounded-lg bg-cyan-400/10 flex items-center justify-center">
+
+                        <FaBrain className="text-cyan-400" />
+
+                      </div>
+
+                      <div>
+
+                        <p className="text-xs text-gray-500">
+                          AI Analysis
+                        </p>
+
+                        <p className="text-sm font-semibold">
+                          Resume Optimized
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                    <FaCheckCircle className="text-green-400" />
+
                   </div>
 
                 </div>
 
-                {/* Score Badge */}
-                <div className="absolute -left-5 bottom-16 px-4 py-3 rounded-xl bg-[#111a32]/90 border border-purple-400/20 backdrop-blur-xl shadow-xl">
+                {/* Score */}
 
-                  <div className="flex items-center gap-3">
-                    <FaStar className="text-yellow-400" />
+                <div className="absolute -left-7 bottom-14 hidden md:block">
 
-                    <div>
-                      <p className="text-xs text-gray-400">
-                        Resume Score
-                      </p>
+                  <div className="rounded-2xl border border-violet-400/20 bg-[#0b1329]/95 backdrop-blur-xl px-5 py-4 shadow-2xl">
 
-                      <p className="text-sm font-bold text-green-400">
-                        92 / 100
-                      </p>
+                    <div className="flex items-center gap-3">
+
+                      <div className="w-10 h-10 rounded-xl bg-violet-400/10 flex items-center justify-center">
+
+                        <FaStar className="text-yellow-400" />
+
+                      </div>
+
+                      <div>
+
+                        <p className="text-xs text-gray-500">
+                          Resume Score
+                        </p>
+
+                        <p className="font-bold text-green-400">
+                          92 / 100
+                        </p>
+
+                      </div>
+
                     </div>
+
+                  </div>
+
+                </div>
+
+                {/* Floating Bolt */}
+
+                <div className="absolute -right-5 top-16 hidden md:block">
+
+                  <div className="w-12 h-12 rounded-2xl bg-[#0b1329] border border-cyan-400/20 flex items-center justify-center shadow-xl">
+
+                    <FaBolt className="text-cyan-400" />
+
                   </div>
 
                 </div>
 
               </div>
+
             </div>
 
           </div>
@@ -236,167 +377,216 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ================= STATS ================= */}
-      <section className="border-y border-white/10 bg-white/[0.02]">
+      {/* =========================================================
+          STATS
+      ========================================================= */}
 
-        <div className="max-w-6xl mx-auto px-6 py-10">
+      <section className="relative border-y border-white/10 bg-white/[0.025]">
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+        <div className="max-w-6xl mx-auto px-6 py-12">
 
-            <div>
-              <h3 className="text-3xl font-bold text-blue-400">AI</h3>
-              <p className="text-gray-500 mt-1 text-sm">
-                Powered Technology
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+
+            <div className="text-center">
+
+              <FaBrain className="mx-auto text-2xl text-cyan-400 mb-3" />
+
+              <h3 className="text-3xl font-black">
+                AI
+              </h3>
+
+              <p className="text-gray-500 text-sm mt-2">
+                Powered
               </p>
+
             </div>
 
-            <div>
-              <h3 className="text-3xl font-bold">100%</h3>
-              <p className="text-gray-500 mt-1 text-sm">
-                Editable Resume
+            <div className="text-center">
+
+              <FaEdit className="mx-auto text-2xl text-blue-400 mb-3" />
+
+              <h3 className="text-3xl font-black">
+                100%
+              </h3>
+
+              <p className="text-gray-500 text-sm mt-2">
+                Editable
               </p>
+
             </div>
 
-            <div>
-              <h3 className="text-3xl font-bold">Fast</h3>
-              <p className="text-gray-500 mt-1 text-sm">
-                Resume Generation
+            <div className="text-center">
+
+              <FaRocket className="mx-auto text-2xl text-violet-400 mb-3" />
+
+              <h3 className="text-3xl font-black">
+                Fast
+              </h3>
+
+              <p className="text-gray-500 text-sm mt-2">
+                Generation
               </p>
+
             </div>
 
-            <div>
-              <h3 className="text-3xl font-bold text-purple-400">
+            <div className="text-center">
+
+              <FaDownload className="mx-auto text-2xl text-cyan-400 mb-3" />
+
+              <h3 className="text-3xl font-black">
                 PDF
               </h3>
-              <p className="text-gray-500 mt-1 text-sm">
-                Ready to Download
+
+              <p className="text-gray-500 text-sm mt-2">
+                Ready
               </p>
+
             </div>
 
           </div>
 
         </div>
+
       </section>
 
-      {/* ================= FEATURES ================= */}
-      <section className="py-24 relative">
+      {/* =========================================================
+          FEATURES
+      ========================================================= */}
+
+      <section className="relative py-28">
 
         <div className="max-w-6xl mx-auto px-6">
 
-          <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="text-center max-w-2xl mx-auto mb-16">
 
-            <p className="text-blue-400 uppercase tracking-[0.2em] text-sm font-semibold">
+            <p className="text-cyan-400 text-sm font-bold uppercase tracking-[0.3em]">
               Powerful Features
             </p>
 
-            <h2 className="text-4xl md:text-5xl font-bold mt-3">
-              Everything You Need
+            <h2 className="text-4xl md:text-5xl font-black mt-4">
+              Everything For Your
+              <span className="block text-transparent bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text">
+                Career Journey
+              </span>
             </h2>
 
             <p className="text-gray-500 mt-5 text-lg">
-              Build a professional resume without spending hours on
-              formatting and writing.
+              Everything you need to create a modern and professional resume.
             </p>
 
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-            {/* Feature 1 */}
-            <div className="group p-7 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-blue-400/30 transition-all duration-300">
+            {/* CARD */}
 
-              <div className="w-14 h-14 rounded-xl bg-blue-500/10 border border-blue-400/10 flex items-center justify-center mb-6">
-                <FaBrain className="text-2xl text-blue-400" />
+            <div className="group relative p-7 rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-cyan-400/[0.04] hover:border-cyan-400/30 transition-all duration-300">
+
+              <div className="absolute inset-0 rounded-3xl bg-cyan-400/0 group-hover:bg-cyan-400/[0.02] transition" />
+
+              <div className="relative">
+
+                <div className="w-14 h-14 rounded-2xl bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center mb-6">
+
+                  <FaBrain className="text-2xl text-cyan-400" />
+
+                </div>
+
+                <h3 className="text-xl font-bold mb-3">
+                  AI Resume Generation
+                </h3>
+
+                <p className="text-gray-500 leading-7">
+                  Describe yourself naturally and let AI transform your
+                  information into structured resume content.
+                </p>
+
+              </div>
+
+            </div>
+
+            <div className="group p-7 rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-blue-400/[0.04] hover:border-blue-400/30 transition-all duration-300">
+
+              <div className="w-14 h-14 rounded-2xl bg-blue-400/10 border border-blue-400/20 flex items-center justify-center mb-6">
+
+                <FaFileAlt className="text-2xl text-blue-400" />
+
               </div>
 
               <h3 className="text-xl font-bold mb-3">
-                AI Powered
+                Professional Structure
               </h3>
 
               <p className="text-gray-500 leading-7">
-                Let AI transform your simple description into professional
-                resume content.
+                Present your education, skills, projects and experience in a
+                clean professional format.
               </p>
 
             </div>
 
-            {/* Feature 2 */}
-            <div className="group p-7 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-purple-400/30 transition-all duration-300">
+            <div className="group p-7 rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-violet-400/[0.04] hover:border-violet-400/30 transition-all duration-300">
 
-              <div className="w-14 h-14 rounded-xl bg-purple-500/10 border border-purple-400/10 flex items-center justify-center mb-6">
-                <FaFileAlt className="text-2xl text-purple-400" />
+              <div className="w-14 h-14 rounded-2xl bg-violet-400/10 border border-violet-400/20 flex items-center justify-center mb-6">
+
+                <FaCode className="text-2xl text-violet-400" />
+
               </div>
 
               <h3 className="text-xl font-bold mb-3">
-                Professional Format
+                Developer Ready
               </h3>
 
               <p className="text-gray-500 leading-7">
-                Organize your education, skills, projects and experience in
-                a clean professional layout.
+                Showcase your programming skills, GitHub projects and
+                technical experience.
               </p>
 
             </div>
 
-            {/* Feature 3 */}
-            <div className="group p-7 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-cyan-400/30 transition-all duration-300">
+            <div className="group p-7 rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-green-400/[0.04] hover:border-green-400/30 transition-all duration-300">
 
-              <div className="w-14 h-14 rounded-xl bg-cyan-500/10 border border-cyan-400/10 flex items-center justify-center mb-6">
-                <FaCode className="text-2xl text-cyan-400" />
-              </div>
+              <div className="w-14 h-14 rounded-2xl bg-green-400/10 border border-green-400/20 flex items-center justify-center mb-6">
 
-              <h3 className="text-xl font-bold mb-3">
-                Developer Friendly
-              </h3>
-
-              <p className="text-gray-500 leading-7">
-                Showcase your technical skills, GitHub projects and
-                development experience.
-              </p>
-
-            </div>
-
-            {/* Feature 4 */}
-            <div className="group p-7 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-green-400/30 transition-all duration-300">
-
-              <div className="w-14 h-14 rounded-xl bg-green-500/10 border border-green-400/10 flex items-center justify-center mb-6">
                 <FaEdit className="text-2xl text-green-400" />
+
               </div>
 
               <h3 className="text-xl font-bold mb-3">
-                Easy to Edit
+                Fully Editable
               </h3>
 
               <p className="text-gray-500 leading-7">
-                Review your generated information and make changes before
-                finalizing your resume.
+                Edit generated information before submitting your final
+                professional resume.
               </p>
 
             </div>
 
-            {/* Feature 5 */}
-            <div className="group p-7 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-orange-400/30 transition-all duration-300">
+            <div className="group p-7 rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-orange-400/[0.04] hover:border-orange-400/30 transition-all duration-300">
 
-              <div className="w-14 h-14 rounded-xl bg-orange-500/10 border border-orange-400/10 flex items-center justify-center mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-orange-400/10 border border-orange-400/20 flex items-center justify-center mb-6">
+
                 <FaDownload className="text-2xl text-orange-400" />
+
               </div>
 
               <h3 className="text-xl font-bold mb-3">
-                Download Resume
+                PDF Download
               </h3>
 
               <p className="text-gray-500 leading-7">
-                Download your final resume and use it for your job
-                applications.
+                Get your final resume ready to use for applications and
+                professional opportunities.
               </p>
 
             </div>
 
-            {/* Feature 6 */}
-            <div className="group p-7 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-pink-400/30 transition-all duration-300">
+            <div className="group p-7 rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-pink-400/[0.04] hover:border-pink-400/30 transition-all duration-300">
 
-              <div className="w-14 h-14 rounded-xl bg-pink-500/10 border border-pink-400/10 flex items-center justify-center mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-pink-400/10 border border-pink-400/20 flex items-center justify-center mb-6">
+
                 <FaRocket className="text-2xl text-pink-400" />
+
               </div>
 
               <h3 className="text-xl font-bold mb-3">
@@ -404,81 +594,101 @@ const LandingPage = () => {
               </h3>
 
               <p className="text-gray-500 leading-7">
-                Present your skills and achievements in a resume designed
-                to make a strong first impression.
+                Build a strong first impression with a polished and
+                professional resume.
               </p>
 
             </div>
 
           </div>
+
         </div>
+
       </section>
 
-      {/* ================= HOW IT WORKS ================= */}
-      <section className="py-24 bg-white/[0.02] border-y border-white/10">
+      {/* =========================================================
+          HOW IT WORKS
+      ========================================================= */}
+
+      <section className="py-28 border-y border-white/10 bg-white/[0.02]">
 
         <div className="max-w-6xl mx-auto px-6">
 
-          <div className="text-center mb-14">
+          <div className="text-center mb-16">
 
-            <p className="text-purple-400 uppercase tracking-[0.2em] text-sm font-semibold">
-              Simple Process
+            <p className="text-violet-400 uppercase tracking-[0.3em] text-sm font-bold">
+              How It Works
             </p>
 
-            <h2 className="text-4xl md:text-5xl font-bold mt-3">
-              Create Your Resume
+            <h2 className="text-4xl md:text-5xl font-black mt-4">
+              From Idea To Resume
             </h2>
 
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
 
-            <div className="text-center">
+            {/* STEP 1 */}
 
-              <div className="mx-auto w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-400/20 flex items-center justify-center text-2xl font-bold text-blue-400">
-                01
+            <div className="relative text-center">
+
+              <div className="mx-auto w-20 h-20 rounded-3xl bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center">
+
+                <span className="text-2xl font-black text-cyan-400">
+                  01
+                </span>
+
               </div>
 
-              <h3 className="text-xl font-bold mt-5">
+              <h3 className="text-xl font-bold mt-6">
                 Describe Yourself
               </h3>
 
               <p className="text-gray-500 mt-3 leading-7">
-                Enter your skills, education, experience, projects and
+                Enter your skills, education, projects, experience and
                 achievements.
               </p>
 
             </div>
 
-            <div className="text-center">
+            {/* STEP 2 */}
 
-              <div className="mx-auto w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-400/20 flex items-center justify-center text-2xl font-bold text-purple-400">
-                02
+            <div className="relative text-center">
+
+              <div className="mx-auto w-20 h-20 rounded-3xl bg-blue-400/10 border border-blue-400/20 flex items-center justify-center">
+
+                <FaBrain className="text-2xl text-blue-400" />
+
               </div>
 
-              <h3 className="text-xl font-bold mt-5">
-                AI Generates
+              <h3 className="text-xl font-bold mt-6">
+                AI Builds It
               </h3>
 
               <p className="text-gray-500 mt-3 leading-7">
-                Our AI organizes your information into a professional
-                resume structure.
+                AI organizes your information into a professional resume
+                structure.
               </p>
 
             </div>
 
-            <div className="text-center">
+            {/* STEP 3 */}
 
-              <div className="mx-auto w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-400/20 flex items-center justify-center text-2xl font-bold text-cyan-400">
-                03
+            <div className="relative text-center">
+
+              <div className="mx-auto w-20 h-20 rounded-3xl bg-violet-400/10 border border-violet-400/20 flex items-center justify-center">
+
+                <FaDownload className="text-2xl text-violet-400" />
+
               </div>
 
-              <h3 className="text-xl font-bold mt-5">
+              <h3 className="text-xl font-bold mt-6">
                 Edit & Download
               </h3>
 
               <p className="text-gray-500 mt-3 leading-7">
-                Review your resume, edit anything you want and download it.
+                Review your resume, make changes and download the final
+                version.
               </p>
 
             </div>
@@ -486,99 +696,131 @@ const LandingPage = () => {
           </div>
 
         </div>
+
       </section>
 
-      {/* ================= CTA ================= */}
-      <section className="py-24 px-6">
+      {/* =========================================================
+          CTA
+      ========================================================= */}
 
-        <div className="max-w-5xl mx-auto relative overflow-hidden rounded-3xl border border-blue-400/20 bg-gradient-to-br from-blue-600/10 via-purple-600/10 to-cyan-500/10 p-10 md:p-16 text-center">
+      <section className="relative py-28 px-6">
 
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-40 bg-blue-500/20 blur-[100px]" />
+        <div className="absolute inset-0 flex justify-center pointer-events-none">
 
-          <div className="relative">
+          <div className="w-[500px] h-[300px] bg-blue-600/10 blur-[120px]" />
 
-            <div className="mx-auto w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-400/20 flex items-center justify-center mb-6">
-              <FaRocket className="text-2xl text-blue-400" />
-            </div>
+        </div>
 
-            <h2 className="text-4xl md:text-5xl font-bold">
-              Your Next Opportunity
-              <span className="block text-blue-400 mt-2">
-                Starts Here.
-              </span>
-            </h2>
+        <div className="relative max-w-5xl mx-auto rounded-[35px] border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.06] via-blue-500/[0.05] to-violet-500/[0.08] p-10 md:p-16 text-center overflow-hidden">
 
-            <p className="text-gray-500 text-lg max-w-2xl mx-auto mt-5">
-              Create a professional resume with AI and take the next step
-              toward your dream career.
-            </p>
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
 
-            <Link
-              to="/generate-resume"
-              className="inline-flex items-center gap-3 mt-8 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 h-14 rounded-xl font-semibold shadow-lg shadow-blue-600/20 hover:scale-105 transition-all"
-            >
-              <FaBrain />
-              Build My Resume
-              <FaArrowRight />
-            </Link>
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center mb-7">
+
+            <FaRocket className="text-2xl text-cyan-400" />
 
           </div>
+
+          <h2 className="text-4xl md:text-5xl font-black">
+
+            Ready To Build Your
+
+            <span className="block mt-2 text-transparent bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text">
+              Career Story?
+            </span>
+
+          </h2>
+
+          <p className="max-w-2xl mx-auto mt-6 text-gray-500 text-lg leading-7">
+
+            Let AI transform your experience and skills into a resume that
+            represents your professional potential.
+
+          </p>
+
+          {/* KEEP THIS ROUTE */}
+
+          <Link
+            to="/generate-resume"
+            className="inline-flex items-center gap-3 mt-9 px-8 h-14 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-violet-600 font-bold shadow-xl shadow-blue-500/20 hover:-translate-y-1 hover:shadow-blue-500/40 transition-all"
+          >
+
+            <FaBrain />
+
+            Create My Resume
+
+            <FaArrowRight />
+
+          </Link>
+
         </div>
+
       </section>
 
-      {/* ================= FOOTER ================= */}
-      <footer className="border-t border-white/10 bg-[#03050f]">
+      {/* =========================================================
+          FOOTER
+      ========================================================= */}
 
-        <div className="max-w-6xl mx-auto px-6 py-12">
+      <footer className="border-t border-white/10 bg-[#01030b]">
 
-          <div className="grid md:grid-cols-3 gap-10">
+        <div className="max-w-6xl mx-auto px-6 py-14">
+
+          <div className="grid md:grid-cols-3 gap-12">
+
+            {/* BRAND */}
 
             <div>
 
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-5">
 
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+
                   <FaBrain />
+
                 </div>
 
-                <span className="font-bold text-xl">
+                <span className="text-xl font-black">
                   AI Resume Maker
                 </span>
 
               </div>
 
-              <p className="text-gray-500 max-w-sm leading-6">
-                Build professional resumes faster with the power of
+              <p className="text-gray-500 leading-7 max-w-sm">
+
+                Build professional, modern resumes faster with the power of
                 Artificial Intelligence.
+
               </p>
 
             </div>
 
+            {/* LINKS */}
+
             <div>
 
-              <h3 className="font-bold mb-4">
-                Quick Links
+              <h3 className="font-bold mb-5">
+                Explore
               </h3>
 
-              <div className="flex flex-col gap-3 text-gray-500">
+              <div className="flex flex-col gap-4 text-gray-500">
 
                 <Link
                   to="/about"
-                  className="hover:text-blue-400 transition"
+                  className="hover:text-cyan-400 transition-colors"
                 >
                   About
                 </Link>
 
                 <Link
                   to="/services"
-                  className="hover:text-blue-400 transition"
+                  className="hover:text-cyan-400 transition-colors"
                 >
                   Services
                 </Link>
 
                 <Link
                   to="/contact"
-                  className="hover:text-blue-400 transition"
+                  className="hover:text-cyan-400 transition-colors"
                 >
                   Contact
                 </Link>
@@ -587,28 +829,37 @@ const LandingPage = () => {
 
             </div>
 
+            {/* CREATE */}
+
             <div>
 
-              <h3 className="font-bold mb-4">
-                Create
+              <h3 className="font-bold mb-5">
+                Start Building
               </h3>
 
               <Link
                 to="/generate-resume"
-                className="text-gray-500 hover:text-blue-400 transition"
+                className="inline-flex items-center gap-2 text-gray-500 hover:text-cyan-400 transition-colors"
               >
-                Generate Resume →
+
+                Generate Resume
+
+                <FaArrowRight className="text-xs" />
+
               </Link>
 
             </div>
 
           </div>
 
-          <div className="border-t border-white/10 mt-10 pt-6 text-center text-gray-600 text-sm">
+          <div className="border-t border-white/10 mt-12 pt-7 text-center text-gray-600 text-sm">
+
             © 2026 AI Resume Maker. Built with AI.
+
           </div>
 
         </div>
+
       </footer>
 
     </div>
