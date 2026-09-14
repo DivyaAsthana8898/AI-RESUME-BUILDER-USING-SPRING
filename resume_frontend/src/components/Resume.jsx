@@ -1,14 +1,20 @@
-import React, { useRef } from "react";
-import { FaGithub, FaLinkedin, FaPhone, FaEnvelope } from "react-icons/fa";
-import { toPng } from "html-to-image";
+import React, { useRef, useState } from "react";
+import {
+  FaGithub,
+  FaLinkedin,
+  FaPhone,
+  FaEnvelope,
+} from "react-icons/fa";
+import { toCanvas } from "html-to-image";
 import { jsPDF } from "jspdf";
 
 const Resume = ({ data = {} }) => {
   const resumeRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
 
-  // =========================
+  // =========================================================
   // SAFE DATA
-  // =========================
+  // =========================================================
 
   const personalInformation = data?.personalInformation || {};
 
@@ -33,130 +39,217 @@ const Resume = ({ data = {} }) => {
 
   const summary = data?.summary || "";
 
-  const skills = Array.isArray(data?.skills) ? data.skills : [];
+  const skills = Array.isArray(data?.skills)
+    ? data.skills
+    : [];
+
   const experience = Array.isArray(data?.experience)
     ? data.experience
     : [];
+
   const education = Array.isArray(data?.education)
     ? data.education
     : [];
+
   const certifications = Array.isArray(data?.certifications)
     ? data.certifications
     : [];
+
   const projects = Array.isArray(data?.projects)
     ? data.projects
     : [];
+
   const achievements = Array.isArray(data?.achievements)
     ? data.achievements
     : [];
+
   const languages = Array.isArray(data?.languages)
     ? data.languages
     : [];
+
   const interests = Array.isArray(data?.interests)
     ? data.interests
     : [];
 
-  // =========================
+  // =========================================================
   // PDF DOWNLOAD
-  // =========================
+  // =========================================================
 
   const handleDownloadPdf = async () => {
-    if (!resumeRef.current) {
-      console.error("Resume element not found");
-      return;
-    }
+    if (!resumeRef.current || downloading) return;
 
     try {
-      const dataUrl = await toPng(resumeRef.current, {
-        quality: 1,
-        pixelRatio: 2,
+      setDownloading(true);
+
+      const element = resumeRef.current;
+
+      // Wait for browser to finish rendering
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      /*
+       * IMPORTANT:
+       * Capture the resume at exact A4 width.
+       * This prevents the right side from getting clipped.
+       */
+
+      const canvas = await toCanvas(element, {
         backgroundColor: "#ffffff",
+        pixelRatio: 2,
+        cacheBust: true,
+        width: element.scrollWidth,
+        height: element.scrollHeight,
+        style: {
+          width: "210mm",
+          maxWidth: "none",
+          margin: "0",
+          transform: "none",
+        },
       });
 
-      const img = new Image();
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+        compress: true,
+      });
 
-      img.onload = () => {
-        const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = 210;
+      const pageHeight = 297;
 
-        const pageWidth = 210;
-        const pageHeight = 297;
+      // Small safe margin
+      const margin = 8;
 
-        const margin = 10;
-        const contentWidth = pageWidth - margin * 2;
+      const printableWidth = pageWidth - margin * 2;
+      const printableHeight = pageHeight - margin * 2;
 
-        const imageRatio = img.height / img.width;
+      /*
+       * Canvas dimensions
+       *
+       * We convert the printable PDF area into canvas pixels.
+       */
+      const pxPerMm = canvas.width / 210;
 
-        const imageHeight = contentWidth * imageRatio;
+      const pageCanvasHeight =
+        Math.floor(printableHeight * pxPerMm);
 
-        // First page
-        pdf.addImage(
-          dataUrl,
-          "PNG",
-          margin,
-          margin,
-          contentWidth,
-          imageHeight
+      let sourceY = 0;
+      let pageNumber = 0;
+
+      while (sourceY < canvas.height) {
+        pageNumber++;
+
+        const remainingHeight =
+          canvas.height - sourceY;
+
+        const currentPageHeight = Math.min(
+          pageCanvasHeight,
+          remainingHeight
         );
 
-        // Additional pages if resume is longer than one A4 page
-        let remainingHeight = imageHeight - (pageHeight - margin * 2);
+        // Create a canvas for this PDF page
+        const pageCanvas = document.createElement("canvas");
 
-        let pageNumber = 1;
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = currentPageHeight;
 
-        while (remainingHeight > 0) {
-          pageNumber++;
+        const pageContext =
+          pageCanvas.getContext("2d");
 
-          pdf.addPage();
+        pageContext.fillStyle = "#ffffff";
+        pageContext.fillRect(
+          0,
+          0,
+          pageCanvas.width,
+          pageCanvas.height
+        );
 
-          const yPosition =
-            margin -
-            (pageNumber - 1) * (pageHeight - margin * 2);
+        pageContext.drawImage(
+          canvas,
+          0,
+          sourceY,
+          canvas.width,
+          currentPageHeight,
+          0,
+          0,
+          canvas.width,
+          currentPageHeight
+        );
 
-          pdf.addImage(
-            dataUrl,
-            "PNG",
-            margin,
-            yPosition,
-            contentWidth,
-            imageHeight
+        const pageImage =
+          pageCanvas.toDataURL(
+            "image/jpeg",
+            0.95
           );
 
-          remainingHeight -= pageHeight - margin * 2;
+        if (pageNumber > 1) {
+          pdf.addPage();
         }
 
-        const safeFileName =
-          fullName.replace(/[^a-zA-Z0-9-_ ]/g, "").trim() ||
-          "generated-resume";
+        const imageHeight =
+          currentPageHeight / pxPerMm;
 
-        pdf.save(`${safeFileName}.pdf`);
-      };
+        pdf.addImage(
+          pageImage,
+          "JPEG",
+          margin,
+          margin,
+          printableWidth,
+          imageHeight,
+          undefined,
+          "FAST"
+        );
 
-      img.src = dataUrl;
+        sourceY += currentPageHeight;
+      }
+
+      // =====================================================
+      // FILE NAME
+      // =====================================================
+
+      const safeFileName =
+        fullName
+          .replace(/[^a-zA-Z0-9-_ ]/g, "")
+          .trim()
+          .replace(/\s+/g, "_") ||
+        "generated-resume";
+
+      pdf.save(`${safeFileName}.pdf`);
+
     } catch (error) {
-      console.error("Error generating PDF:", error);
+      console.error(
+        "Error generating PDF:",
+        error
+      );
+
+      alert(
+        "Unable to generate PDF. Please try again."
+      );
+    } finally {
+      setDownloading(false);
     }
   };
 
-  // =========================
+  // =========================================================
   // SECTION TITLE
-  // =========================
+  // =========================================================
 
   const SectionTitle = ({ children }) => (
     <div
       style={{
-        marginBottom: "12px",
-        paddingBottom: "6px",
-        borderBottom: "2px solid #1f2937",
+        marginBottom: "10px",
+        paddingBottom: "5px",
+        borderBottom: "1.5px solid #1f2937",
       }}
     >
       <h2
         style={{
           margin: 0,
-          fontSize: "17px",
+          fontSize: "16px",
+          lineHeight: "1.2",
           fontWeight: "700",
           color: "#111827",
           textTransform: "uppercase",
-          letterSpacing: "0.8px",
+          letterSpacing: "0.7px",
         }}
       >
         {children}
@@ -164,47 +257,76 @@ const Resume = ({ data = {} }) => {
     </div>
   );
 
-  // =========================
-  // MAIN RESUME
-  // =========================
+  // =========================================================
+  // MAIN
+  // =========================================================
 
   return (
-    <>
+    <div
+      style={{
+        width: "100%",
+        overflowX: "auto",
+        padding: "20px 0 30px",
+        background: "#f3f4f6",
+      }}
+    >
+      {/* =====================================================
+          A4 RESUME
+      ===================================================== */}
+
       <div
         ref={resumeRef}
         style={{
           width: "210mm",
           minHeight: "297mm",
-          maxWidth: "100%",
+          boxSizing: "border-box",
+
+          /*
+           * IMPORTANT:
+           * Do NOT use maxWidth: 100%.
+           * It was causing the A4 layout to shrink/clamp.
+           */
+          maxWidth: "none",
+
           margin: "0 auto",
-          padding: "16mm 17mm",
+          padding: "14mm 16mm",
+
           backgroundColor: "#ffffff",
           color: "#111827",
+
           fontFamily:
             "Arial, Helvetica, sans-serif",
-          boxSizing: "border-box",
-          lineHeight: "1.45",
+
+          fontSize: "12px",
+          lineHeight: "1.4",
+
+          overflow: "hidden",
+
+          boxShadow:
+            "0 4px 20px rgba(0,0,0,0.12)",
         }}
       >
-        {/* =================================
+
+        {/* ===================================================
             HEADER
-        ================================= */}
+        =================================================== */}
 
         <header
           style={{
             textAlign: "center",
-            paddingBottom: "14px",
-            borderBottom: "3px solid #111827",
-            marginBottom: "18px",
+            paddingBottom: "12px",
+            borderBottom: "2px solid #111827",
+            marginBottom: "16px",
           }}
         >
           <h1
             style={{
               margin: 0,
-              fontSize: "31px",
+              fontSize: "29px",
+              lineHeight: "1.15",
               fontWeight: "800",
               color: "#111827",
-              letterSpacing: "0.5px",
+              letterSpacing: "0.4px",
             }}
           >
             {fullName}
@@ -213,8 +335,8 @@ const Resume = ({ data = {} }) => {
           {location && (
             <div
               style={{
-                marginTop: "6px",
-                fontSize: "13px",
+                marginTop: "5px",
+                fontSize: "11.5px",
                 color: "#4b5563",
               }}
             >
@@ -222,17 +344,15 @@ const Resume = ({ data = {} }) => {
             </div>
           )}
 
-          {/* Contact Information */}
-
           <div
             style={{
-              marginTop: "9px",
+              marginTop: "8px",
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
               flexWrap: "wrap",
-              gap: "8px 18px",
-              fontSize: "11.5px",
+              gap: "5px 15px",
+              fontSize: "10.5px",
               color: "#374151",
             }}
           >
@@ -244,10 +364,10 @@ const Resume = ({ data = {} }) => {
                   textDecoration: "none",
                   display: "flex",
                   alignItems: "center",
-                  gap: "5px",
+                  gap: "4px",
                 }}
               >
-                <FaEnvelope size={11} />
+                <FaEnvelope size={10} />
                 {email}
               </a>
             )}
@@ -257,10 +377,10 @@ const Resume = ({ data = {} }) => {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "5px",
+                  gap: "4px",
                 }}
               >
-                <FaPhone size={10} />
+                <FaPhone size={9} />
                 {phoneNumber}
               </span>
             )}
@@ -275,10 +395,10 @@ const Resume = ({ data = {} }) => {
                   textDecoration: "none",
                   display: "flex",
                   alignItems: "center",
-                  gap: "5px",
+                  gap: "4px",
                 }}
               >
-                <FaLinkedin size={11} />
+                <FaLinkedin size={10} />
                 LinkedIn
               </a>
             )}
@@ -293,10 +413,10 @@ const Resume = ({ data = {} }) => {
                   textDecoration: "none",
                   display: "flex",
                   alignItems: "center",
-                  gap: "5px",
+                  gap: "4px",
                 }}
               >
-                <FaGithub size={11} />
+                <FaGithub size={10} />
                 GitHub
               </a>
             )}
@@ -317,22 +437,25 @@ const Resume = ({ data = {} }) => {
           </div>
         </header>
 
-        {/* =================================
+        {/* ===================================================
             SUMMARY
-        ================================= */}
+        =================================================== */}
 
         {summary && (
           <section
             style={{
-              marginBottom: "18px",
+              marginBottom: "15px",
             }}
           >
-            <SectionTitle>Professional Summary</SectionTitle>
+            <SectionTitle>
+              Professional Summary
+            </SectionTitle>
 
             <p
               style={{
                 margin: 0,
-                fontSize: "12px",
+                fontSize: "11.2px",
+                lineHeight: "1.5",
                 color: "#374151",
                 textAlign: "justify",
               }}
@@ -342,19 +465,25 @@ const Resume = ({ data = {} }) => {
           </section>
         )}
 
-        {/* =================================
+        {/* ===================================================
             SKILLS
-        ================================= */}
+        =================================================== */}
 
         {skills.length > 0 && (
-          <section style={{ marginBottom: "18px" }}>
-            <SectionTitle>Skills</SectionTitle>
+          <section
+            style={{
+              marginBottom: "15px",
+            }}
+          >
+            <SectionTitle>
+              Skills
+            </SectionTitle>
 
             <div
               style={{
                 display: "flex",
                 flexWrap: "wrap",
-                gap: "7px",
+                gap: "5px",
               }}
             >
               {skills.map((skill, index) => (
@@ -362,18 +491,24 @@ const Resume = ({ data = {} }) => {
                   key={index}
                   style={{
                     display: "inline-block",
-                    padding: "5px 10px",
+                    padding: "4px 8px",
                     border: "1px solid #d1d5db",
-                    borderRadius: "4px",
-                    fontSize: "11px",
+                    borderRadius: "3px",
+                    fontSize: "10px",
                     color: "#1f2937",
                     backgroundColor: "#f9fafb",
                   }}
                 >
-                  <strong>{skill?.title || "Skill"}</strong>
+                  <strong>
+                    {skill?.title || "Skill"}
+                  </strong>
 
                   {skill?.level && (
-                    <span style={{ color: "#6b7280" }}>
+                    <span
+                      style={{
+                        color: "#6b7280",
+                      }}
+                    >
                       {" "}
                       — {skill.level}
                     </span>
@@ -384,19 +519,26 @@ const Resume = ({ data = {} }) => {
           </section>
         )}
 
-        {/* =================================
+        {/* ===================================================
             EXPERIENCE
-        ================================= */}
+        =================================================== */}
 
         {experience.length > 0 && (
-          <section style={{ marginBottom: "18px" }}>
-            <SectionTitle>Experience</SectionTitle>
+          <section
+            style={{
+              marginBottom: "15px",
+            }}
+          >
+            <SectionTitle>
+              Experience
+            </SectionTitle>
 
             {experience.map((exp, index) => (
               <div
                 key={index}
                 style={{
-                  marginBottom: "13px",
+                  marginBottom: "11px",
+                  breakInside: "avoid",
                   pageBreakInside: "avoid",
                 }}
               >
@@ -408,30 +550,39 @@ const Resume = ({ data = {} }) => {
                     gap: "10px",
                   }}
                 >
-                  <div>
+                  <div
+                    style={{
+                      minWidth: 0,
+                      flex: 1,
+                    }}
+                  >
                     <h3
                       style={{
                         margin: 0,
-                        fontSize: "14px",
+                        fontSize: "12.5px",
+                        lineHeight: "1.25",
                         fontWeight: "700",
                         color: "#111827",
                       }}
                     >
-                      {exp?.jobTitle || "Job Title"}
+                      {exp?.jobTitle ||
+                        "Job Title"}
                     </h3>
 
-                    {(exp?.company || exp?.location) && (
+                    {(exp?.company ||
+                      exp?.location) && (
                       <div
                         style={{
                           marginTop: "2px",
-                          fontSize: "12px",
+                          fontSize: "10.5px",
                           color: "#4b5563",
                           fontWeight: "600",
                         }}
                       >
                         {exp?.company || ""}
 
-                        {exp?.company && exp?.location
+                        {exp?.company &&
+                        exp?.location
                           ? " | "
                           : ""}
 
@@ -443,7 +594,8 @@ const Resume = ({ data = {} }) => {
                   {exp?.duration && (
                     <div
                       style={{
-                        fontSize: "11px",
+                        flexShrink: 0,
+                        fontSize: "10px",
                         color: "#6b7280",
                         whiteSpace: "nowrap",
                         textAlign: "right",
@@ -457,8 +609,9 @@ const Resume = ({ data = {} }) => {
                 {exp?.responsibility && (
                   <p
                     style={{
-                      margin: "5px 0 0",
-                      fontSize: "11.5px",
+                      margin: "4px 0 0",
+                      fontSize: "10.5px",
+                      lineHeight: "1.45",
                       color: "#374151",
                     }}
                   >
@@ -470,51 +623,67 @@ const Resume = ({ data = {} }) => {
           </section>
         )}
 
-        {/* =================================
+        {/* ===================================================
             EDUCATION
-        ================================= */}
+        =================================================== */}
 
         {education.length > 0 && (
-          <section style={{ marginBottom: "18px" }}>
-            <SectionTitle>Education</SectionTitle>
+          <section
+            style={{
+              marginBottom: "15px",
+            }}
+          >
+            <SectionTitle>
+              Education
+            </SectionTitle>
 
             {education.map((edu, index) => (
               <div
                 key={index}
                 style={{
-                  marginBottom: "11px",
+                  marginBottom: "9px",
+                  breakInside: "avoid",
                   pageBreakInside: "avoid",
                 }}
               >
                 <div
                   style={{
                     display: "flex",
-                    justifyContent: "space-between",
+                    justifyContent:
+                      "space-between",
                     gap: "10px",
                   }}
                 >
-                  <div>
+                  <div
+                    style={{
+                      minWidth: 0,
+                      flex: 1,
+                    }}
+                  >
                     <h3
                       style={{
                         margin: 0,
-                        fontSize: "13.5px",
+                        fontSize: "12px",
+                        lineHeight: "1.25",
                         fontWeight: "700",
                         color: "#111827",
                       }}
                     >
-                      {edu?.degree || "Degree"}
+                      {edu?.degree ||
+                        "Degree"}
                     </h3>
 
                     <div
                       style={{
                         marginTop: "2px",
-                        fontSize: "11.5px",
+                        fontSize: "10.5px",
                         color: "#4b5563",
                       }}
                     >
                       {edu?.university || ""}
 
-                      {edu?.university && edu?.location
+                      {edu?.university &&
+                      edu?.location
                         ? " | "
                         : ""}
 
@@ -525,9 +694,11 @@ const Resume = ({ data = {} }) => {
                   {edu?.graduationYear && (
                     <div
                       style={{
-                        fontSize: "11px",
+                        flexShrink: 0,
+                        fontSize: "10px",
                         color: "#6b7280",
-                        whiteSpace: "nowrap",
+                        whiteSpace:
+                          "nowrap",
                       }}
                     >
                       {edu.graduationYear}
@@ -539,52 +710,74 @@ const Resume = ({ data = {} }) => {
           </section>
         )}
 
-        {/* =================================
+        {/* ===================================================
             PROJECTS
-        ================================= */}
+        =================================================== */}
 
         {projects.length > 0 && (
-          <section style={{ marginBottom: "18px" }}>
-            <SectionTitle>Projects</SectionTitle>
+          <section
+            style={{
+              marginBottom: "15px",
+            }}
+          >
+            <SectionTitle>
+              Projects
+            </SectionTitle>
 
             {projects.map((project, index) => {
               let technologies = [];
 
-              if (Array.isArray(project?.technologiesUsed)) {
-                technologies = project.technologiesUsed;
-              } else if (
-                typeof project?.technologiesUsed === "string"
+              if (
+                Array.isArray(
+                  project?.technologiesUsed
+                )
               ) {
-                technologies = project.technologiesUsed
-                  .split(",")
-                  .map((item) => item.trim())
-                  .filter(Boolean);
+                technologies =
+                  project.technologiesUsed;
+              } else if (
+                typeof project?.technologiesUsed ===
+                "string"
+              ) {
+                technologies =
+                  project.technologiesUsed
+                    .split(",")
+                    .map((item) =>
+                      item.trim()
+                    )
+                    .filter(Boolean);
               }
 
               return (
                 <div
                   key={index}
                   style={{
-                    marginBottom: "13px",
-                    pageBreakInside: "avoid",
+                    marginBottom: "10px",
+                    breakInside: "avoid",
+                    pageBreakInside:
+                      "avoid",
                   }}
                 >
                   <h3
                     style={{
                       margin: 0,
-                      fontSize: "13.5px",
+                      fontSize: "12px",
+                      lineHeight: "1.25",
                       fontWeight: "700",
                       color: "#111827",
                     }}
                   >
-                    {project?.title || "Project"}
+                    {project?.title ||
+                      "Project"}
                   </h3>
 
                   {project?.description && (
                     <p
                       style={{
-                        margin: "4px 0",
-                        fontSize: "11.5px",
+                        margin:
+                          "3px 0",
+                        fontSize: "10.5px",
+                        lineHeight:
+                          "1.45",
                         color: "#374151",
                       }}
                     >
@@ -592,29 +785,43 @@ const Resume = ({ data = {} }) => {
                     </p>
                   )}
 
-                  {technologies.length > 0 && (
+                  {technologies.length >
+                    0 && (
                     <div
                       style={{
-                        fontSize: "10.5px",
+                        fontSize: "9.8px",
+                        lineHeight:
+                          "1.4",
                         color: "#4b5563",
                       }}
                     >
-                      <strong>Technologies:</strong>{" "}
-                      {technologies.join(", ")}
+                      <strong>
+                        Technologies:
+                      </strong>{" "}
+                      {technologies.join(
+                        ", "
+                      )}
                     </div>
                   )}
 
                   {project?.githubLink && (
                     <a
-                      href={project.githubLink}
+                      href={
+                        project.githubLink
+                      }
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
-                        display: "inline-block",
-                        marginTop: "3px",
-                        fontSize: "10.5px",
-                        color: "#2563eb",
-                        textDecoration: "none",
+                        display:
+                          "inline-block",
+                        marginTop:
+                          "2px",
+                        fontSize:
+                          "9.5px",
+                        color:
+                          "#2563eb",
+                        textDecoration:
+                          "none",
                       }}
                     >
                       GitHub Project
@@ -626,177 +833,285 @@ const Resume = ({ data = {} }) => {
           </section>
         )}
 
-        {/* =================================
+        {/* ===================================================
             CERTIFICATIONS
-        ================================= */}
+        =================================================== */}
 
         {certifications.length > 0 && (
-          <section style={{ marginBottom: "18px" }}>
-            <SectionTitle>Certifications</SectionTitle>
+          <section
+            style={{
+              marginBottom: "15px",
+            }}
+          >
+            <SectionTitle>
+              Certifications
+            </SectionTitle>
 
-            {certifications.map((cert, index) => (
-              <div
-                key={index}
-                style={{
-                  marginBottom: "9px",
-                  pageBreakInside: "avoid",
-                }}
-              >
+            {certifications.map(
+              (cert, index) => (
                 <div
+                  key={index}
                   style={{
-                    fontSize: "12.5px",
-                    fontWeight: "700",
-                    color: "#111827",
+                    marginBottom: "7px",
+                    breakInside:
+                      "avoid",
+                    pageBreakInside:
+                      "avoid",
                   }}
                 >
-                  {cert?.title || "Certification"}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: "11px",
-                    color: "#4b5563",
-                  }}
-                >
-                  {cert?.issuingOrganization || ""}
-
-                  {cert?.issuingOrganization && cert?.year
-                    ? " | "
-                    : ""}
-
-                  {cert?.year || ""}
-                </div>
-              </div>
-            ))}
-          </section>
-        )}
-
-        {/* =================================
-            ACHIEVEMENTS
-        ================================= */}
-
-        {achievements.length > 0 && (
-          <section style={{ marginBottom: "18px" }}>
-            <SectionTitle>Achievements</SectionTitle>
-
-            {achievements.map((achievement, index) => (
-              <div
-                key={index}
-                style={{
-                  marginBottom: "9px",
-                  pageBreakInside: "avoid",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "12px",
-                    fontWeight: "700",
-                    color: "#111827",
-                  }}
-                >
-                  {achievement?.title || "Achievement"}
-
-                  {achievement?.year && (
-                    <span
-                      style={{
-                        marginLeft: "8px",
-                        fontSize: "10.5px",
-                        color: "#6b7280",
-                        fontWeight: "400",
-                      }}
-                    >
-                      {achievement.year}
-                    </span>
-                  )}
-                </div>
-
-                {achievement?.extraInformation && (
                   <div
                     style={{
-                      marginTop: "2px",
                       fontSize: "11px",
-                      color: "#374151",
+                      lineHeight:
+                        "1.3",
+                      fontWeight: "700",
+                      color: "#111827",
                     }}
                   >
-                    {achievement.extraInformation}
+                    {cert?.title ||
+                      "Certification"}
                   </div>
-                )}
-              </div>
-            ))}
+
+                  <div
+                    style={{
+                      fontSize:
+                        "10px",
+                      color:
+                        "#4b5563",
+                    }}
+                  >
+                    {cert?.issuingOrganization ||
+                      ""}
+
+                    {cert?.issuingOrganization &&
+                    cert?.year
+                      ? " | "
+                      : ""}
+
+                    {cert?.year || ""}
+                  </div>
+                </div>
+              )
+            )}
           </section>
         )}
 
-        {/* =================================
-            LANGUAGES + INTERESTS
-        ================================= */}
+        {/* ===================================================
+            ACHIEVEMENTS
+        =================================================== */}
 
-        {(languages.length > 0 || interests.length > 0) && (
+        {achievements.length > 0 && (
+          <section
+            style={{
+              marginBottom: "15px",
+            }}
+          >
+            <SectionTitle>
+              Achievements
+            </SectionTitle>
+
+            {achievements.map(
+              (achievement, index) => (
+                <div
+                  key={index}
+                  style={{
+                    marginBottom: "7px",
+                    breakInside:
+                      "avoid",
+                    pageBreakInside:
+                      "avoid",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize:
+                        "11px",
+                      lineHeight:
+                        "1.3",
+                      fontWeight:
+                        "700",
+                      color:
+                        "#111827",
+                    }}
+                  >
+                    {achievement?.title ||
+                      "Achievement"}
+
+                    {achievement?.year && (
+                      <span
+                        style={{
+                          marginLeft:
+                            "7px",
+                          fontSize:
+                            "9.5px",
+                          color:
+                            "#6b7280",
+                          fontWeight:
+                            "400",
+                        }}
+                      >
+                        {achievement.year}
+                      </span>
+                    )}
+                  </div>
+
+                  {achievement?.extraInformation && (
+                    <div
+                      style={{
+                        marginTop:
+                          "2px",
+                        fontSize:
+                          "10px",
+                        lineHeight:
+                          "1.4",
+                        color:
+                          "#374151",
+                      }}
+                    >
+                      {
+                        achievement.extraInformation
+                      }
+                    </div>
+                  )}
+                </div>
+              )
+            )}
+          </section>
+        )}
+
+        {/* ===================================================
+            LANGUAGES + INTERESTS
+        =================================================== */}
+
+        {(languages.length > 0 ||
+          interests.length > 0) && (
           <section
             style={{
               display: "grid",
+
+              /*
+               * FIX:
+               * Use minmax(0, 1fr) so long text
+               * cannot push the second column
+               * outside the A4 page.
+               */
               gridTemplateColumns:
-                languages.length > 0 && interests.length > 0
-                  ? "1fr 1fr"
-                  : "1fr",
-              gap: "30px",
-              marginBottom: "10px",
+                languages.length > 0 &&
+                interests.length > 0
+                  ? "minmax(0, 1fr) minmax(0, 1fr)"
+                  : "minmax(0, 1fr)",
+
+              gap: "20px",
+              marginBottom: "5px",
+
+              breakInside: "avoid",
               pageBreakInside: "avoid",
             }}
           >
+            {/* LANGUAGES */}
+
             {languages.length > 0 && (
-              <div>
-                <SectionTitle>Languages</SectionTitle>
+              <div
+                style={{
+                  minWidth: 0,
+                }}
+              >
+                <SectionTitle>
+                  Languages
+                </SectionTitle>
 
                 <div
                   style={{
                     display: "flex",
-                    flexWrap: "wrap",
-                    gap: "6px",
+                    flexWrap:
+                      "wrap",
+                    gap: "5px",
                   }}
                 >
-                  {languages.map((language, index) => (
-                    <span
-                      key={index}
-                      style={{
-                        fontSize: "11px",
-                        color: "#374151",
-                        padding: "4px 8px",
-                        border: "1px solid #d1d5db",
-                        borderRadius: "4px",
-                      }}
-                    >
-                      {language?.name || "Language"}
-                    </span>
-                  ))}
+                  {languages.map(
+                    (language, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          display:
+                            "inline-block",
+                          fontSize:
+                            "9.8px",
+                          lineHeight:
+                            "1.2",
+                          color:
+                            "#374151",
+                          padding:
+                            "4px 7px",
+                          border:
+                            "1px solid #d1d5db",
+                          borderRadius:
+                            "3px",
+                          maxWidth:
+                            "100%",
+                          overflowWrap:
+                            "anywhere",
+                        }}
+                      >
+                        {language?.name ||
+                          "Language"}
+                      </span>
+                    )
+                  )}
                 </div>
               </div>
             )}
 
+            {/* INTERESTS */}
+
             {interests.length > 0 && (
-              <div>
-                <SectionTitle>Interests</SectionTitle>
+              <div
+                style={{
+                  minWidth: 0,
+                }}
+              >
+                <SectionTitle>
+                  Interests
+                </SectionTitle>
 
                 <div
                   style={{
                     display: "flex",
-                    flexWrap: "wrap",
-                    gap: "6px",
+                    flexWrap:
+                      "wrap",
+                    gap: "5px",
                   }}
                 >
-                  {interests.map((interest, index) => (
-                    <span
-                      key={index}
-                      style={{
-                        fontSize: "11px",
-                        color: "#374151",
-                        padding: "4px 8px",
-                        border: "1px solid #d1d5db",
-                        borderRadius: "4px",
-                      }}
-                    >
-                      {interest?.name || "Interest"}
-                    </span>
-                  ))}
+                  {interests.map(
+                    (interest, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          display:
+                            "inline-block",
+                          fontSize:
+                            "9.8px",
+                          lineHeight:
+                            "1.2",
+                          color:
+                            "#374151",
+                          padding:
+                            "4px 7px",
+                          border:
+                            "1px solid #d1d5db",
+                          borderRadius:
+                            "3px",
+                          maxWidth:
+                            "100%",
+                          overflowWrap:
+                            "anywhere",
+                        }}
+                      >
+                        {interest?.name ||
+                          "Interest"}
+                      </span>
+                    )
+                  )}
                 </div>
               </div>
             )}
@@ -804,30 +1119,49 @@ const Resume = ({ data = {} }) => {
         )}
       </div>
 
-      {/* =================================
-          BUTTON
-      ================================= */}
+      {/* =====================================================
+          DOWNLOAD BUTTON
+      ===================================================== */}
 
       <div
         style={{
           display: "flex",
-          justifyContent: "center",
-          margin: "20px 0 30px",
+          justifyContent:
+            "center",
+          marginTop: "20px",
         }}
       >
         <button
+          type="button"
           onClick={handleDownloadPdf}
-          className="btn btn-primary"
+          disabled={downloading}
           style={{
-            padding: "10px 28px",
-            borderRadius: "8px",
-            cursor: "pointer",
+            padding:
+              "10px 26px",
+            border: "none",
+            borderRadius:
+              "7px",
+            background:
+              downloading
+                ? "#9ca3af"
+                : "#2563eb",
+            color: "#ffffff",
+            fontSize:
+              "14px",
+            fontWeight:
+              "600",
+            cursor:
+              downloading
+                ? "not-allowed"
+                : "pointer",
           }}
         >
-          Download Resume PDF
+          {downloading
+            ? "Generating PDF..."
+            : "Download Resume PDF"}
         </button>
       </div>
-    </>
+    </div>
   );
 };
 
