@@ -3,7 +3,7 @@ import axios from "axios";
 export const baseURL = "https://ai-resume-builder-using-spring.onrender.com";
 
 export const axiosInstance = axios.create({
-  baseURL: baseURLL,
+  baseURL: baseURL,
 });
 
 export const generateResume = async (description) => {
