@@ -1,5 +1,4 @@
 import React, { useRef } from "react";
-import "daisyui/dist/full.css";
 import { FaGithub, FaLinkedin, FaPhone, FaEnvelope } from "react-icons/fa";
 import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
@@ -7,430 +6,827 @@ import { jsPDF } from "jspdf";
 const Resume = ({ data = {} }) => {
   const resumeRef = useRef(null);
 
-  // Safely handle missing data
+  // =========================
+  // SAFE DATA
+  // =========================
+
   const personalInformation = data?.personalInformation || {};
 
+  const fullName =
+    personalInformation?.fullName?.trim() || "Your Name";
+
+  const email = personalInformation?.email || "";
+  const phoneNumber = personalInformation?.phoneNumber || "";
+  const location = personalInformation?.location || "";
+
+  const linkedin =
+    personalInformation?.linkedIn ||
+    personalInformation?.linkedin ||
+    "";
+
+  const github =
+    personalInformation?.gitHub ||
+    personalInformation?.github ||
+    "";
+
+  const portfolio = personalInformation?.portfolio || "";
+
+  const summary = data?.summary || "";
+
   const skills = Array.isArray(data?.skills) ? data.skills : [];
-  const experience = Array.isArray(data?.experience) ? data.experience : [];
-  const education = Array.isArray(data?.education) ? data.education : [];
+  const experience = Array.isArray(data?.experience)
+    ? data.experience
+    : [];
+  const education = Array.isArray(data?.education)
+    ? data.education
+    : [];
   const certifications = Array.isArray(data?.certifications)
     ? data.certifications
     : [];
-  const projects = Array.isArray(data?.projects) ? data.projects : [];
+  const projects = Array.isArray(data?.projects)
+    ? data.projects
+    : [];
   const achievements = Array.isArray(data?.achievements)
     ? data.achievements
     : [];
-  const languages = Array.isArray(data?.languages) ? data.languages : [];
-  const interests = Array.isArray(data?.interests) ? data.interests : [];
+  const languages = Array.isArray(data?.languages)
+    ? data.languages
+    : [];
+  const interests = Array.isArray(data?.interests)
+    ? data.interests
+    : [];
 
-  const handleDownloadPdf = () => {
+  // =========================
+  // PDF DOWNLOAD
+  // =========================
+
+  const handleDownloadPdf = async () => {
     if (!resumeRef.current) {
       console.error("Resume element not found");
       return;
     }
 
-    toPng(resumeRef.current, { quality: 1.0 })
-      .then((dataUrl) => {
+    try {
+      const dataUrl = await toPng(resumeRef.current, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: "#ffffff",
+      });
+
+      const img = new Image();
+
+      img.onload = () => {
         const pdf = new jsPDF("p", "mm", "a4");
 
-        pdf.addImage(dataUrl, "PNG", 10, 10, 190, 0);
+        const pageWidth = 210;
+        const pageHeight = 297;
 
-        const fileName =
-          personalInformation.fullName || "generated-resume";
+        const margin = 10;
+        const contentWidth = pageWidth - margin * 2;
 
-        pdf.save(`${fileName}.pdf`);
-      })
-      .catch((err) => {
-        console.error("Error generating PDF:", err);
-      });
+        const imageRatio = img.height / img.width;
+
+        const imageHeight = contentWidth * imageRatio;
+
+        // First page
+        pdf.addImage(
+          dataUrl,
+          "PNG",
+          margin,
+          margin,
+          contentWidth,
+          imageHeight
+        );
+
+        // Additional pages if resume is longer than one A4 page
+        let remainingHeight = imageHeight - (pageHeight - margin * 2);
+
+        let pageNumber = 1;
+
+        while (remainingHeight > 0) {
+          pageNumber++;
+
+          pdf.addPage();
+
+          const yPosition =
+            margin -
+            (pageNumber - 1) * (pageHeight - margin * 2);
+
+          pdf.addImage(
+            dataUrl,
+            "PNG",
+            margin,
+            yPosition,
+            contentWidth,
+            imageHeight
+          );
+
+          remainingHeight -= pageHeight - margin * 2;
+        }
+
+        const safeFileName =
+          fullName.replace(/[^a-zA-Z0-9-_ ]/g, "").trim() ||
+          "generated-resume";
+
+        pdf.save(`${safeFileName}.pdf`);
+      };
+
+      img.src = dataUrl;
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    }
   };
+
+  // =========================
+  // SECTION TITLE
+  // =========================
+
+  const SectionTitle = ({ children }) => (
+    <div
+      style={{
+        marginBottom: "12px",
+        paddingBottom: "6px",
+        borderBottom: "2px solid #1f2937",
+      }}
+    >
+      <h2
+        style={{
+          margin: 0,
+          fontSize: "17px",
+          fontWeight: "700",
+          color: "#111827",
+          textTransform: "uppercase",
+          letterSpacing: "0.8px",
+        }}
+      >
+        {children}
+      </h2>
+    </div>
+  );
+
+  // =========================
+  // MAIN RESUME
+  // =========================
 
   return (
     <>
       <div
         ref={resumeRef}
-        className="max-w-4xl mx-auto shadow-2xl rounded-lg p-8 space-y-6 bg-base-100 text-base-content border border-gray-200 dark:border-gray-700 transition-all duration-300"
+        style={{
+          width: "210mm",
+          minHeight: "297mm",
+          maxWidth: "100%",
+          margin: "0 auto",
+          padding: "16mm 17mm",
+          backgroundColor: "#ffffff",
+          color: "#111827",
+          fontFamily:
+            "Arial, Helvetica, sans-serif",
+          boxSizing: "border-box",
+          lineHeight: "1.45",
+        }}
       >
-        {/* ================= HEADER ================= */}
+        {/* =================================
+            HEADER
+        ================================= */}
 
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold text-primary">
-            {personalInformation.fullName || "Your Name"}
+        <header
+          style={{
+            textAlign: "center",
+            paddingBottom: "14px",
+            borderBottom: "3px solid #111827",
+            marginBottom: "18px",
+          }}
+        >
+          <h1
+            style={{
+              margin: 0,
+              fontSize: "31px",
+              fontWeight: "800",
+              color: "#111827",
+              letterSpacing: "0.5px",
+            }}
+          >
+            {fullName}
           </h1>
 
-          {personalInformation.location && (
-            <p className="text-lg text-gray-500">
-              {personalInformation.location}
-            </p>
+          {location && (
+            <div
+              style={{
+                marginTop: "6px",
+                fontSize: "13px",
+                color: "#4b5563",
+              }}
+            >
+              {location}
+            </div>
           )}
 
-          <div className="flex justify-center space-x-4 mt-2 flex-wrap">
-            {personalInformation.email && (
+          {/* Contact Information */}
+
+          <div
+            style={{
+              marginTop: "9px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "8px 18px",
+              fontSize: "11.5px",
+              color: "#374151",
+            }}
+          >
+            {email && (
               <a
-                href={`mailto:${personalInformation.email}`}
-                className="flex items-center text-secondary hover:underline"
+                href={`mailto:${email}`}
+                style={{
+                  color: "#374151",
+                  textDecoration: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
               >
-                <FaEnvelope className="mr-2" />
-                {personalInformation.email}
+                <FaEnvelope size={11} />
+                {email}
               </a>
             )}
 
-            {personalInformation.phoneNumber && (
-              <p className="flex items-center text-gray-500">
-                <FaPhone className="mr-2" />
-                {personalInformation.phoneNumber}
-              </p>
+            {phoneNumber && (
+              <span
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
+              >
+                <FaPhone size={10} />
+                {phoneNumber}
+              </span>
             )}
-          </div>
 
-          <div className="flex justify-center space-x-4 mt-2 flex-wrap">
-            {personalInformation.gitHub && (
+            {linkedin && (
               <a
-                href={personalInformation.gitHub}
+                href={linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-500 hover:text-gray-700 flex items-center"
+                style={{
+                  color: "#374151",
+                  textDecoration: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
               >
-                <FaGithub className="mr-2" />
+                <FaLinkedin size={11} />
+                LinkedIn
+              </a>
+            )}
+
+            {github && (
+              <a
+                href={github}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#374151",
+                  textDecoration: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
+              >
+                <FaGithub size={11} />
                 GitHub
               </a>
             )}
 
-            {personalInformation.linkedIn && (
+            {portfolio && (
               <a
-                href={personalInformation.linkedIn}
+                href={portfolio}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-500 hover:text-blue-700 flex items-center"
+                style={{
+                  color: "#374151",
+                  textDecoration: "none",
+                }}
               >
-                <FaLinkedin className="mr-2" />
-                LinkedIn
+                Portfolio
               </a>
             )}
           </div>
-        </div>
+        </header>
 
-        <div className="divider"></div>
+        {/* =================================
+            SUMMARY
+        ================================= */}
 
-        {/* ================= SUMMARY ================= */}
+        {summary && (
+          <section
+            style={{
+              marginBottom: "18px",
+            }}
+          >
+            <SectionTitle>Professional Summary</SectionTitle>
 
-        <section>
-          <h2 className="text-2xl font-semibold text-secondary">
-            Summary
-          </h2>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "12px",
+                color: "#374151",
+                textAlign: "justify",
+              }}
+            >
+              {summary}
+            </p>
+          </section>
+        )}
 
-          <p className="text-gray-700 dark:text-gray-300">
-            {data?.summary || "No summary provided."}
-          </p>
-        </section>
+        {/* =================================
+            SKILLS
+        ================================= */}
 
-        <div className="divider"></div>
+        {skills.length > 0 && (
+          <section style={{ marginBottom: "18px" }}>
+            <SectionTitle>Skills</SectionTitle>
 
-        {/* ================= SKILLS ================= */}
-
-        <section>
-          <h2 className="text-2xl font-semibold text-secondary">
-            Skills
-          </h2>
-
-          {skills.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "7px",
+              }}
+            >
               {skills.map((skill, index) => (
-                <div
+                <span
                   key={index}
-                  className="badge badge-outline badge-lg px-4 py-2"
+                  style={{
+                    display: "inline-block",
+                    padding: "5px 10px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "4px",
+                    fontSize: "11px",
+                    color: "#1f2937",
+                    backgroundColor: "#f9fafb",
+                  }}
                 >
-                  {skill?.title || "Skill"}
+                  <strong>{skill?.title || "Skill"}</strong>
 
                   {skill?.level && (
-                    <>
-                      {" - "}
-                      <span className="ml-1 font-semibold">
-                        {skill.level}
-                      </span>
-                    </>
+                    <span style={{ color: "#6b7280" }}>
+                      {" "}
+                      — {skill.level}
+                    </span>
                   )}
-                </div>
+                </span>
               ))}
             </div>
-          ) : (
-            <p className="text-gray-500 mt-2">
-              No skills provided.
-            </p>
-          )}
-        </section>
+          </section>
+        )}
 
-        <div className="divider"></div>
+        {/* =================================
+            EXPERIENCE
+        ================================= */}
 
-        {/* ================= EXPERIENCE ================= */}
+        {experience.length > 0 && (
+          <section style={{ marginBottom: "18px" }}>
+            <SectionTitle>Experience</SectionTitle>
 
-        <section>
-          <h2 className="text-2xl font-semibold text-secondary">
-            Experience
-          </h2>
-
-          {experience.length > 0 ? (
-            experience.map((exp, index) => (
+            {experience.map((exp, index) => (
               <div
                 key={index}
-                className="mb-4 p-4 rounded-lg shadow-md bg-base-200 border border-gray-300 dark:border-gray-700"
+                style={{
+                  marginBottom: "13px",
+                  pageBreakInside: "avoid",
+                }}
               >
-                <h3 className="text-xl font-bold">
-                  {exp?.jobTitle || "Job Title"}
-                </h3>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    gap: "10px",
+                  }}
+                >
+                  <div>
+                    <h3
+                      style={{
+                        margin: 0,
+                        fontSize: "14px",
+                        fontWeight: "700",
+                        color: "#111827",
+                      }}
+                    >
+                      {exp?.jobTitle || "Job Title"}
+                    </h3>
 
-                <p className="text-gray-500">
-                  {exp?.company || ""}
-                  {exp?.location ? ` | ${exp.location}` : ""}
-                </p>
+                    {(exp?.company || exp?.location) && (
+                      <div
+                        style={{
+                          marginTop: "2px",
+                          fontSize: "12px",
+                          color: "#4b5563",
+                          fontWeight: "600",
+                        }}
+                      >
+                        {exp?.company || ""}
 
-                {exp?.duration && (
-                  <p className="text-gray-400">
-                    {exp.duration}
-                  </p>
-                )}
+                        {exp?.company && exp?.location
+                          ? " | "
+                          : ""}
+
+                        {exp?.location || ""}
+                      </div>
+                    )}
+                  </div>
+
+                  {exp?.duration && (
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        color: "#6b7280",
+                        whiteSpace: "nowrap",
+                        textAlign: "right",
+                      }}
+                    >
+                      {exp.duration}
+                    </div>
+                  )}
+                </div>
 
                 {exp?.responsibility && (
-                  <p className="mt-2 text-gray-600 dark:text-gray-300">
+                  <p
+                    style={{
+                      margin: "5px 0 0",
+                      fontSize: "11.5px",
+                      color: "#374151",
+                    }}
+                  >
                     {exp.responsibility}
                   </p>
                 )}
               </div>
-            ))
-          ) : (
-            <p className="text-gray-500">
-              No experience provided.
-            </p>
-          )}
-        </section>
+            ))}
+          </section>
+        )}
 
-        <div className="divider"></div>
+        {/* =================================
+            EDUCATION
+        ================================= */}
 
-        {/* ================= EDUCATION ================= */}
+        {education.length > 0 && (
+          <section style={{ marginBottom: "18px" }}>
+            <SectionTitle>Education</SectionTitle>
 
-        <section>
-          <h2 className="text-2xl font-semibold text-secondary">
-            Education
-          </h2>
-
-          {education.length > 0 ? (
-            education.map((edu, index) => (
+            {education.map((edu, index) => (
               <div
                 key={index}
-                className="mb-4 p-4 rounded-lg shadow-md bg-base-200 border border-gray-300 dark:border-gray-700"
+                style={{
+                  marginBottom: "11px",
+                  pageBreakInside: "avoid",
+                }}
               >
-                <h3 className="text-xl font-bold">
-                  {edu?.degree || "Degree"}
-                </h3>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: "10px",
+                  }}
+                >
+                  <div>
+                    <h3
+                      style={{
+                        margin: 0,
+                        fontSize: "13.5px",
+                        fontWeight: "700",
+                        color: "#111827",
+                      }}
+                    >
+                      {edu?.degree || "Degree"}
+                    </h3>
 
-                <p className="text-gray-500">
-                  {edu?.university || ""}
-                  {edu?.location ? `, ${edu.location}` : ""}
-                </p>
+                    <div
+                      style={{
+                        marginTop: "2px",
+                        fontSize: "11.5px",
+                        color: "#4b5563",
+                      }}
+                    >
+                      {edu?.university || ""}
 
-                {edu?.graduationYear && (
-                  <p className="text-gray-400">
-                    🎓 Graduation Year: {edu.graduationYear}
-                  </p>
-                )}
+                      {edu?.university && edu?.location
+                        ? " | "
+                        : ""}
+
+                      {edu?.location || ""}
+                    </div>
+                  </div>
+
+                  {edu?.graduationYear && (
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        color: "#6b7280",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {edu.graduationYear}
+                    </div>
+                  )}
+                </div>
               </div>
-            ))
-          ) : (
-            <p className="text-gray-500">
-              No education information provided.
-            </p>
-          )}
-        </section>
+            ))}
+          </section>
+        )}
 
-        <div className="divider"></div>
+        {/* =================================
+            PROJECTS
+        ================================= */}
 
-        {/* ================= CERTIFICATIONS ================= */}
+        {projects.length > 0 && (
+          <section style={{ marginBottom: "18px" }}>
+            <SectionTitle>Projects</SectionTitle>
 
-        <section>
-          <h2 className="text-2xl font-semibold text-secondary">
-            Certifications
-          </h2>
+            {projects.map((project, index) => {
+              let technologies = [];
 
-          {certifications.length > 0 ? (
-            certifications.map((cert, index) => (
-              <div
-                key={index}
-                className="mb-4 p-4 rounded-lg shadow-md bg-base-200 border border-gray-300 dark:border-gray-700"
-              >
-                <h3 className="text-xl font-bold">
-                  {cert?.title || "Certification"}
-                </h3>
-
-                <p className="text-gray-500">
-                  {cert?.issuingOrganization || ""}
-                  {cert?.year ? ` - ${cert.year}` : ""}
-                </p>
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-500">
-              No certifications provided.
-            </p>
-          )}
-        </section>
-
-        <div className="divider"></div>
-
-        {/* ================= PROJECTS ================= */}
-
-        <section>
-          <h2 className="text-2xl font-semibold text-secondary">
-            Projects
-          </h2>
-
-          {projects.length > 0 ? (
-            projects.map((proj, index) => {
-              const technologies = Array.isArray(
-                proj?.technologiesUsed
-              )
-                ? proj.technologiesUsed
-                : [];
+              if (Array.isArray(project?.technologiesUsed)) {
+                technologies = project.technologiesUsed;
+              } else if (
+                typeof project?.technologiesUsed === "string"
+              ) {
+                technologies = project.technologiesUsed
+                  .split(",")
+                  .map((item) => item.trim())
+                  .filter(Boolean);
+              }
 
               return (
                 <div
                   key={index}
-                  className="mb-4 p-4 rounded-lg shadow-md bg-base-200 border border-gray-300 dark:border-gray-700"
+                  style={{
+                    marginBottom: "13px",
+                    pageBreakInside: "avoid",
+                  }}
                 >
-                  <h3 className="text-xl font-bold">
-                    {proj?.title || "Project"}
+                  <h3
+                    style={{
+                      margin: 0,
+                      fontSize: "13.5px",
+                      fontWeight: "700",
+                      color: "#111827",
+                    }}
+                  >
+                    {project?.title || "Project"}
                   </h3>
 
-                  {proj?.description && (
-                    <p className="text-gray-600 dark:text-gray-300">
-                      {proj.description}
+                  {project?.description && (
+                    <p
+                      style={{
+                        margin: "4px 0",
+                        fontSize: "11.5px",
+                        color: "#374151",
+                      }}
+                    >
+                      {project.description}
                     </p>
                   )}
 
                   {technologies.length > 0 && (
-                    <p className="text-gray-500">
-                      🛠 Technologies:{" "}
+                    <div
+                      style={{
+                        fontSize: "10.5px",
+                        color: "#4b5563",
+                      }}
+                    >
+                      <strong>Technologies:</strong>{" "}
                       {technologies.join(", ")}
-                    </p>
+                    </div>
                   )}
 
-                  {proj?.githubLink && (
+                  {project?.githubLink && (
                     <a
-                      href={proj.githubLink}
+                      href={project.githubLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline"
+                      style={{
+                        display: "inline-block",
+                        marginTop: "3px",
+                        fontSize: "10.5px",
+                        color: "#2563eb",
+                        textDecoration: "none",
+                      }}
                     >
-                      🔗 GitHub Link
+                      GitHub Project
                     </a>
                   )}
                 </div>
               );
-            })
-          ) : (
-            <p className="text-gray-500">
-              No projects provided.
-            </p>
-          )}
-        </section>
+            })}
+          </section>
+        )}
 
-        <div className="divider"></div>
+        {/* =================================
+            CERTIFICATIONS
+        ================================= */}
 
-        {/* ================= ACHIEVEMENTS ================= */}
+        {certifications.length > 0 && (
+          <section style={{ marginBottom: "18px" }}>
+            <SectionTitle>Certifications</SectionTitle>
 
-        <section>
-          <h2 className="text-2xl font-semibold text-secondary">
-            Achievements
-          </h2>
-
-          {achievements.length > 0 ? (
-            achievements.map((ach, index) => (
+            {certifications.map((cert, index) => (
               <div
                 key={index}
-                className="mb-4 p-4 rounded-lg shadow-md bg-base-200 border border-gray-300 dark:border-gray-700"
+                style={{
+                  marginBottom: "9px",
+                  pageBreakInside: "avoid",
+                }}
               >
-                <h3 className="text-xl font-bold">
-                  {ach?.title || "Achievement"}
-                </h3>
+                <div
+                  style={{
+                    fontSize: "12.5px",
+                    fontWeight: "700",
+                    color: "#111827",
+                  }}
+                >
+                  {cert?.title || "Certification"}
+                </div>
 
-                {ach?.year && (
-                  <p className="text-gray-500">
-                    {ach.year}
-                  </p>
-                )}
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "#4b5563",
+                  }}
+                >
+                  {cert?.issuingOrganization || ""}
 
-                {ach?.extraInformation && (
-                  <p className="text-gray-600 dark:text-gray-300">
-                    {ach.extraInformation}
-                  </p>
+                  {cert?.issuingOrganization && cert?.year
+                    ? " | "
+                    : ""}
+
+                  {cert?.year || ""}
+                </div>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {/* =================================
+            ACHIEVEMENTS
+        ================================= */}
+
+        {achievements.length > 0 && (
+          <section style={{ marginBottom: "18px" }}>
+            <SectionTitle>Achievements</SectionTitle>
+
+            {achievements.map((achievement, index) => (
+              <div
+                key={index}
+                style={{
+                  marginBottom: "9px",
+                  pageBreakInside: "avoid",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: "700",
+                    color: "#111827",
+                  }}
+                >
+                  {achievement?.title || "Achievement"}
+
+                  {achievement?.year && (
+                    <span
+                      style={{
+                        marginLeft: "8px",
+                        fontSize: "10.5px",
+                        color: "#6b7280",
+                        fontWeight: "400",
+                      }}
+                    >
+                      {achievement.year}
+                    </span>
+                  )}
+                </div>
+
+                {achievement?.extraInformation && (
+                  <div
+                    style={{
+                      marginTop: "2px",
+                      fontSize: "11px",
+                      color: "#374151",
+                    }}
+                  >
+                    {achievement.extraInformation}
+                  </div>
                 )}
               </div>
-            ))
-          ) : (
-            <p className="text-gray-500">
-              No achievements provided.
-            </p>
-          )}
-        </section>
+            ))}
+          </section>
+        )}
 
-        <div className="divider"></div>
+        {/* =================================
+            LANGUAGES + INTERESTS
+        ================================= */}
 
-        {/* ================= LANGUAGES ================= */}
+        {(languages.length > 0 || interests.length > 0) && (
+          <section
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                languages.length > 0 && interests.length > 0
+                  ? "1fr 1fr"
+                  : "1fr",
+              gap: "30px",
+              marginBottom: "10px",
+              pageBreakInside: "avoid",
+            }}
+          >
+            {languages.length > 0 && (
+              <div>
+                <SectionTitle>Languages</SectionTitle>
 
-        <section>
-          <h2 className="text-2xl font-semibold text-secondary">
-            Languages
-          </h2>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "6px",
+                  }}
+                >
+                  {languages.map((language, index) => (
+                    <span
+                      key={index}
+                      style={{
+                        fontSize: "11px",
+                        color: "#374151",
+                        padding: "4px 8px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "4px",
+                      }}
+                    >
+                      {language?.name || "Language"}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
-          {languages.length > 0 ? (
-            <ul className="list-disc pl-6 text-gray-700 dark:text-gray-300">
-              {languages.map((lang, index) => (
-                <li key={index}>
-                  {lang?.name || "Language"}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500">
-              No languages provided.
-            </p>
-          )}
-        </section>
+            {interests.length > 0 && (
+              <div>
+                <SectionTitle>Interests</SectionTitle>
 
-        <div className="divider"></div>
-
-        {/* ================= INTERESTS ================= */}
-
-        <section>
-          <h2 className="text-2xl font-semibold text-secondary">
-            Interests
-          </h2>
-
-          {interests.length > 0 ? (
-            <ul className="list-disc pl-6 text-gray-700 dark:text-gray-300">
-              {interests.map((interest, index) => (
-                <li key={index}>
-                  {interest?.name || "Interest"}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500">
-              No interests provided.
-            </p>
-          )}
-        </section>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "6px",
+                  }}
+                >
+                  {interests.map((interest, index) => (
+                    <span
+                      key={index}
+                      style={{
+                        fontSize: "11px",
+                        color: "#374151",
+                        padding: "4px 8px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "4px",
+                      }}
+                    >
+                      {interest?.name || "Interest"}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
       </div>
 
-      {/* ================= PDF BUTTON ================= */}
+      {/* =================================
+          BUTTON
+      ================================= */}
 
-      <section className="flex justify-center mt-4">
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          margin: "20px 0 30px",
+        }}
+      >
         <button
           onClick={handleDownloadPdf}
           className="btn btn-primary"
+          style={{
+            padding: "10px 28px",
+            borderRadius: "8px",
+            cursor: "pointer",
+          }}
         >
-          Print
+          Download Resume PDF
         </button>
-      </section>
+      </div>
     </>
   );
 };
