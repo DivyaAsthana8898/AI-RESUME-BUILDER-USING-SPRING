@@ -1,86 +1,228 @@
 package com.resume.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.json.JSONObject;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
 public class ResumeServiceImpl implements ResumeService {
 
-    private ChatClient chatClient;
+    private final ChatClient chatClient;
 
     public ResumeServiceImpl(ChatClient.Builder builder) {
         this.chatClient = builder.build();
     }
 
     @Override
-    public   Map<String, Object> generateResumeResponse(String userResumeDescription) throws IOException {
+    public Map<String, Object> generateResumeResponse(String userResumeDescription)
+            throws IOException {
 
-        String promptString = this.loadPromptFromFile("resume_prompt.txt");
-        String promptContent = this.putValuesToTemplate(promptString, Map.of(
-                "userDescription", userResumeDescription
-        ));
+        // Load resume_prompt.txt safely from classpath.
+        // This works both locally and inside the Spring Boot JAR on Render.
+        String promptString = loadPromptFromFile("resume_prompt.txt");
+
+        // Replace {{userDescription}} in the prompt template
+        String promptContent = putValuesToTemplate(
+                promptString,
+                Map.of("userDescription", userResumeDescription)
+        );
+
+        // Create prompt
         Prompt prompt = new Prompt(promptContent);
-        String response = chatClient.prompt(prompt).call().content();
-        Map<String, Object> stringObjectMap = parseMultipleResponses(response);
-        //modify :
-        return stringObjectMap;
+
+        // Call AI model
+        String response = chatClient
+                .prompt(prompt)
+                .call()
+                .content();
+
+        // Parse AI response
+        return parseMultipleResponses(response);
     }
 
-
+    /**
+     * Loads a file from src/main/resources.
+     *
+     * IMPORTANT:
+     * Do not use resource.getFile() here because it fails
+     * when the application is running from a packaged JAR.
+     */
     String loadPromptFromFile(String filename) throws IOException {
-        Path path = new ClassPathResource(filename).getFile().toPath();
-        return Files.readString(path);
+
+        ClassPathResource resource = new ClassPathResource(filename);
+
+        try (var inputStream = resource.getInputStream()) {
+
+            return new String(
+                    inputStream.readAllBytes(),
+                    StandardCharsets.UTF_8
+            );
+        }
     }
 
-    String putValuesToTemplate(String template, Map<String, String> values) {
+    /**
+     * Replaces template placeholders with actual values.
+     *
+     * Example:
+     * {{userDescription}}
+     * becomes the user's resume description.
+     */
+    String putValuesToTemplate(
+            String template,
+            Map<String, String> values
+    ) {
+
         for (Map.Entry<String, String> entry : values.entrySet()) {
 
-            template = template.replace("{{" + entry.getKey() + "}}", entry.getValue());
-
+            template = template.replace(
+                    "{{" + entry.getKey() + "}}",
+                    entry.getValue()
+            );
         }
+
         return template;
     }
 
+    /**
+     * Parses the AI response.
+     *
+     * Expected response can contain:
+     *
+     * <think>
+     * ...
+     * </think>
+     *
+     * ```json
+     * {
+     *   ...
+     * }
+     * ```
+     */
+    public static Map<String, Object> parseMultipleResponses(
+            String response
+    ) {
 
-    public static Map<String, Object> parseMultipleResponses(String response) {
         Map<String, Object> jsonResponse = new HashMap<>();
 
-        // Extract content inside <think> tags
-        int thinkStart = response.indexOf("<think>") + 7;
-        int thinkEnd = response.indexOf("</think>");
-        if (thinkStart != -1 && thinkEnd != -1) {
-            String thinkContent = response.substring(thinkStart, thinkEnd).trim();
-            jsonResponse.put("think", thinkContent);
-        } else {
-            jsonResponse.put("think", null); // Handle missing <think> tags
+        if (response == null || response.isBlank()) {
+            jsonResponse.put("think", null);
+            jsonResponse.put("data", null);
+            return jsonResponse;
         }
 
-        // Extract content that is in JSON format
-        int jsonStart = response.indexOf("```json") + 7; // Start after ```json
-        int jsonEnd = response.lastIndexOf("```");       // End before ```
-        if (jsonStart != -1 && jsonEnd != -1 && jsonStart < jsonEnd) {
-            String jsonContent = response.substring(jsonStart, jsonEnd).trim();
-            try {
-                // Convert JSON string to Map using Jackson ObjectMapper
-                ObjectMapper objectMapper = new ObjectMapper();
-                Map<String, Object> dataContent = objectMapper.readValue(jsonContent, Map.class);
-                jsonResponse.put("data", dataContent);
-            } catch (Exception e) {
-                jsonResponse.put("data", null); // Handle invalid JSON
-                System.err.println("Invalid JSON format in the response: " + e.getMessage());
-            }
+        // -----------------------------------------
+        // Extract <think>...</think>
+        // -----------------------------------------
+
+        int thinkStartIndex = response.indexOf("<think>");
+        int thinkEndIndex = response.indexOf("</think>");
+
+        if (thinkStartIndex != -1
+                && thinkEndIndex != -1
+                && thinkStartIndex < thinkEndIndex) {
+
+            String thinkContent = response.substring(
+                    thinkStartIndex + "<think>".length(),
+                    thinkEndIndex
+            ).trim();
+
+            jsonResponse.put("think", thinkContent);
+
         } else {
-            jsonResponse.put("data", null); // Handle missing JSON
+
+            jsonResponse.put("think", null);
+        }
+
+        // -----------------------------------------
+        // Extract ```json ... ```
+        // -----------------------------------------
+
+        int jsonStartIndex = response.indexOf("```json");
+        int jsonEndIndex = response.lastIndexOf("```");
+
+        if (jsonStartIndex != -1
+                && jsonEndIndex != -1
+                && jsonStartIndex < jsonEndIndex) {
+
+            String jsonContent = response.substring(
+                    jsonStartIndex + "```json".length(),
+                    jsonEndIndex
+            ).trim();
+
+            try {
+
+                ObjectMapper objectMapper = new ObjectMapper();
+
+                Map<String, Object> dataContent =
+                        objectMapper.readValue(
+                                jsonContent,
+                                Map.class
+                        );
+
+                jsonResponse.put("data", dataContent);
+
+            } catch (Exception e) {
+
+                jsonResponse.put("data", null);
+
+                System.err.println(
+                        "Invalid JSON format in AI response: "
+                                + e.getMessage()
+                );
+            }
+
+        } else {
+
+            // -----------------------------------------
+            // Fallback:
+            // Try to find normal JSON without ```json
+            // -----------------------------------------
+
+            int firstBrace = response.indexOf("{");
+            int lastBrace = response.lastIndexOf("}");
+
+            if (firstBrace != -1
+                    && lastBrace != -1
+                    && firstBrace < lastBrace) {
+
+                String jsonContent = response.substring(
+                        firstBrace,
+                        lastBrace + 1
+                ).trim();
+
+                try {
+
+                    ObjectMapper objectMapper = new ObjectMapper();
+
+                    Map<String, Object> dataContent =
+                            objectMapper.readValue(
+                                    jsonContent,
+                                    Map.class
+                            );
+
+                    jsonResponse.put("data", dataContent);
+
+                } catch (Exception e) {
+
+                    jsonResponse.put("data", null);
+
+                    System.err.println(
+                            "Unable to parse JSON from AI response: "
+                                    + e.getMessage()
+                    );
+                }
+
+            } else {
+
+                jsonResponse.put("data", null);
+            }
         }
 
         return jsonResponse;
