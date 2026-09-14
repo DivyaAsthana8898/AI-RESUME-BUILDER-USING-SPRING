@@ -72,39 +72,82 @@ const Resume = ({ data = {} }) => {
     : [];
 
   // =========================================================
-  // PDF DOWNLOAD
+  // DOWNLOAD PDF - FIXED
   // =========================================================
 
   const handleDownloadPdf = async () => {
-    if (!resumeRef.current || downloading) return;
+    if (!resumeRef.current || downloading) {
+      return;
+    }
 
     try {
       setDownloading(true);
 
       const element = resumeRef.current;
 
-      // Wait for browser to finish rendering
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      // A4 CSS size
+      // 210mm = approximately 793.7px at 96 DPI
+      const A4_WIDTH_PX = 794;
+
+      // Wait for React/browser rendering
+      await new Promise((resolve) =>
+        setTimeout(resolve, 500)
+      );
 
       /*
        * IMPORTANT:
-       * Capture the resume at exact A4 width.
-       * This prevents the right side from getting clipped.
+       *
+       * Do NOT use element.scrollWidth here.
+       * It can become different depending on browser zoom,
+       * parent overflow and responsive layout.
+       *
+       * We force the capture width to exact A4 width.
        */
+
+      const rect = element.getBoundingClientRect();
+
+      const captureWidth = A4_WIDTH_PX;
+
+      const captureHeight = Math.ceil(
+        (rect.height / rect.width) * captureWidth
+      );
 
       const canvas = await toCanvas(element, {
         backgroundColor: "#ffffff",
+
+        width: captureWidth,
+        height: captureHeight,
+
+        canvasWidth: captureWidth * 2,
+        canvasHeight: captureHeight * 2,
+
         pixelRatio: 2,
+
         cacheBust: true,
-        width: element.scrollWidth,
-        height: element.scrollHeight,
+
         style: {
-          width: "210mm",
-          maxWidth: "none",
+          width: `${captureWidth}px`,
+          minWidth: `${captureWidth}px`,
+          maxWidth: `${captureWidth}px`,
+
+          height: `${rect.height}px`,
+
           margin: "0",
+          padding: "52px 60px",
+
+          boxSizing: "border-box",
+
           transform: "none",
+
+          overflow: "visible",
+
+          backgroundColor: "#ffffff",
         },
       });
+
+      // =====================================================
+      // CREATE A4 PDF
+      // =====================================================
 
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -116,64 +159,84 @@ const Resume = ({ data = {} }) => {
       const pageWidth = 210;
       const pageHeight = 297;
 
-      // Small safe margin
       const margin = 8;
 
-      const printableWidth = pageWidth - margin * 2;
-      const printableHeight = pageHeight - margin * 2;
+      const printableWidth =
+        pageWidth - margin * 2;
+
+      const printableHeight =
+        pageHeight - margin * 2;
 
       /*
-       * Canvas dimensions
-       *
-       * We convert the printable PDF area into canvas pixels.
+       * Canvas width represents the complete A4 width.
        */
-      const pxPerMm = canvas.width / 210;
 
-      const pageCanvasHeight =
-        Math.floor(printableHeight * pxPerMm);
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+
+      const pixelsPerMm =
+        canvasWidth / pageWidth;
+
+      const pageHeightPx =
+        Math.floor(
+          printableHeight * pixelsPerMm
+        );
 
       let sourceY = 0;
       let pageNumber = 0;
 
-      while (sourceY < canvas.height) {
+      while (sourceY < canvasHeight) {
         pageNumber++;
 
         const remainingHeight =
-          canvas.height - sourceY;
+          canvasHeight - sourceY;
 
-        const currentPageHeight = Math.min(
-          pageCanvasHeight,
+        const currentHeight = Math.min(
+          pageHeightPx,
           remainingHeight
         );
 
-        // Create a canvas for this PDF page
-        const pageCanvas = document.createElement("canvas");
+        // ==============================================
+        // Create page canvas
+        // ==============================================
 
-        pageCanvas.width = canvas.width;
-        pageCanvas.height = currentPageHeight;
+        const pageCanvas =
+          document.createElement("canvas");
 
-        const pageContext =
+        pageCanvas.width = canvasWidth;
+        pageCanvas.height = currentHeight;
+
+        const context =
           pageCanvas.getContext("2d");
 
-        pageContext.fillStyle = "#ffffff";
-        pageContext.fillRect(
+        context.fillStyle = "#ffffff";
+
+        context.fillRect(
           0,
           0,
           pageCanvas.width,
           pageCanvas.height
         );
 
-        pageContext.drawImage(
+        context.drawImage(
           canvas,
+
           0,
           sourceY,
-          canvas.width,
-          currentPageHeight,
+
+          canvasWidth,
+          currentHeight,
+
           0,
           0,
-          canvas.width,
-          currentPageHeight
+
+          canvasWidth,
+          currentHeight
         );
+
+        // ==============================================
+        // Convert page to image
+        // ==============================================
 
         const pageImage =
           pageCanvas.toDataURL(
@@ -186,20 +249,23 @@ const Resume = ({ data = {} }) => {
         }
 
         const imageHeight =
-          currentPageHeight / pxPerMm;
+          currentHeight / pixelsPerMm;
 
         pdf.addImage(
           pageImage,
           "JPEG",
+
           margin,
           margin,
+
           printableWidth,
           imageHeight,
+
           undefined,
           "FAST"
         );
 
-        sourceY += currentPageHeight;
+        sourceY += currentHeight;
       }
 
       // =====================================================
@@ -208,16 +274,20 @@ const Resume = ({ data = {} }) => {
 
       const safeFileName =
         fullName
-          .replace(/[^a-zA-Z0-9-_ ]/g, "")
+          .replace(
+            /[^a-zA-Z0-9-_ ]/g,
+            ""
+          )
           .trim()
           .replace(/\s+/g, "_") ||
         "generated-resume";
 
-      pdf.save(`${safeFileName}.pdf`);
-
+      pdf.save(
+        `${safeFileName}.pdf`
+      );
     } catch (error) {
       console.error(
-        "Error generating PDF:",
+        "PDF generation error:",
         error
       );
 
@@ -236,15 +306,16 @@ const Resume = ({ data = {} }) => {
   const SectionTitle = ({ children }) => (
     <div
       style={{
-        marginBottom: "10px",
+        marginBottom: "9px",
         paddingBottom: "5px",
-        borderBottom: "1.5px solid #1f2937",
+        borderBottom:
+          "1.5px solid #1f2937",
       }}
     >
       <h2
         style={{
           margin: 0,
-          fontSize: "16px",
+          fontSize: "15px",
           lineHeight: "1.2",
           fontWeight: "700",
           color: "#111827",
@@ -279,16 +350,21 @@ const Resume = ({ data = {} }) => {
         style={{
           width: "210mm",
           minHeight: "297mm",
+
           boxSizing: "border-box",
 
           /*
-           * IMPORTANT:
-           * Do NOT use maxWidth: 100%.
-           * It was causing the A4 layout to shrink/clamp.
+           * VERY IMPORTANT
+           *
+           * No maxWidth: 100%
+           * No width: 100%
+           * No responsive shrinking
            */
+
           maxWidth: "none",
 
           margin: "0 auto",
+
           padding: "14mm 16mm",
 
           backgroundColor: "#ffffff",
@@ -297,16 +373,16 @@ const Resume = ({ data = {} }) => {
           fontFamily:
             "Arial, Helvetica, sans-serif",
 
-          fontSize: "12px",
+          fontSize: "11px",
+
           lineHeight: "1.4",
 
-          overflow: "hidden",
+          overflow: "visible",
 
           boxShadow:
             "0 4px 20px rgba(0,0,0,0.12)",
         }}
       >
-
         {/* ===================================================
             HEADER
         =================================================== */}
@@ -314,19 +390,30 @@ const Resume = ({ data = {} }) => {
         <header
           style={{
             textAlign: "center",
-            paddingBottom: "12px",
-            borderBottom: "2px solid #111827",
-            marginBottom: "16px",
+
+            paddingBottom: "11px",
+
+            borderBottom:
+              "2px solid #111827",
+
+            marginBottom: "15px",
           }}
         >
           <h1
             style={{
               margin: 0,
-              fontSize: "29px",
+
+              fontSize: "27px",
+
               lineHeight: "1.15",
+
               fontWeight: "800",
+
               color: "#111827",
+
               letterSpacing: "0.4px",
+
+              overflowWrap: "anywhere",
             }}
           >
             {fullName}
@@ -336,7 +423,9 @@ const Resume = ({ data = {} }) => {
             <div
               style={{
                 marginTop: "5px",
-                fontSize: "11.5px",
+
+                fontSize: "11px",
+
                 color: "#4b5563",
               }}
             >
@@ -344,16 +433,27 @@ const Resume = ({ data = {} }) => {
             </div>
           )}
 
+          {/* CONTACT INFORMATION */}
+
           <div
             style={{
               marginTop: "8px",
+
               display: "flex",
+
               justifyContent: "center",
+
               alignItems: "center",
+
               flexWrap: "wrap",
-              gap: "5px 15px",
-              fontSize: "10.5px",
+
+              gap: "5px 13px",
+
+              fontSize: "10px",
+
               color: "#374151",
+
+              maxWidth: "100%",
             }}
           >
             {email && (
@@ -361,13 +461,20 @@ const Resume = ({ data = {} }) => {
                 href={`mailto:${email}`}
                 style={{
                   color: "#374151",
+
                   textDecoration: "none",
+
                   display: "flex",
+
                   alignItems: "center",
+
                   gap: "4px",
+
+                  overflowWrap:
+                    "anywhere",
                 }}
               >
-                <FaEnvelope size={10} />
+                <FaEnvelope size={9} />
                 {email}
               </a>
             )}
@@ -376,8 +483,12 @@ const Resume = ({ data = {} }) => {
               <span
                 style={{
                   display: "flex",
+
                   alignItems: "center",
+
                   gap: "4px",
+
+                  whiteSpace: "nowrap",
                 }}
               >
                 <FaPhone size={9} />
@@ -392,13 +503,19 @@ const Resume = ({ data = {} }) => {
                 rel="noopener noreferrer"
                 style={{
                   color: "#374151",
+
                   textDecoration: "none",
+
                   display: "flex",
+
                   alignItems: "center",
+
                   gap: "4px",
+
+                  whiteSpace: "nowrap",
                 }}
               >
-                <FaLinkedin size={10} />
+                <FaLinkedin size={9} />
                 LinkedIn
               </a>
             )}
@@ -410,13 +527,19 @@ const Resume = ({ data = {} }) => {
                 rel="noopener noreferrer"
                 style={{
                   color: "#374151",
+
                   textDecoration: "none",
+
                   display: "flex",
+
                   alignItems: "center",
+
                   gap: "4px",
+
+                  whiteSpace: "nowrap",
                 }}
               >
-                <FaGithub size={10} />
+                <FaGithub size={9} />
                 GitHub
               </a>
             )}
@@ -428,7 +551,10 @@ const Resume = ({ data = {} }) => {
                 rel="noopener noreferrer"
                 style={{
                   color: "#374151",
+
                   textDecoration: "none",
+
+                  whiteSpace: "nowrap",
                 }}
               >
                 Portfolio
@@ -444,7 +570,11 @@ const Resume = ({ data = {} }) => {
         {summary && (
           <section
             style={{
-              marginBottom: "15px",
+              marginBottom: "14px",
+
+              breakInside: "avoid",
+
+              pageBreakInside: "avoid",
             }}
           >
             <SectionTitle>
@@ -454,10 +584,17 @@ const Resume = ({ data = {} }) => {
             <p
               style={{
                 margin: 0,
-                fontSize: "11.2px",
-                lineHeight: "1.5",
+
+                fontSize: "10.5px",
+
+                lineHeight: "1.45",
+
                 color: "#374151",
+
                 textAlign: "justify",
+
+                overflowWrap:
+                  "anywhere",
               }}
             >
               {summary}
@@ -472,7 +609,11 @@ const Resume = ({ data = {} }) => {
         {skills.length > 0 && (
           <section
             style={{
-              marginBottom: "15px",
+              marginBottom: "14px",
+
+              breakInside: "avoid",
+
+              pageBreakInside: "avoid",
             }}
           >
             <SectionTitle>
@@ -482,39 +623,62 @@ const Resume = ({ data = {} }) => {
             <div
               style={{
                 display: "flex",
+
                 flexWrap: "wrap",
+
                 gap: "5px",
               }}
             >
-              {skills.map((skill, index) => (
-                <span
-                  key={index}
-                  style={{
-                    display: "inline-block",
-                    padding: "4px 8px",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "3px",
-                    fontSize: "10px",
-                    color: "#1f2937",
-                    backgroundColor: "#f9fafb",
-                  }}
-                >
-                  <strong>
-                    {skill?.title || "Skill"}
-                  </strong>
+              {skills.map(
+                (skill, index) => (
+                  <span
+                    key={index}
+                    style={{
+                      display:
+                        "inline-block",
 
-                  {skill?.level && (
-                    <span
-                      style={{
-                        color: "#6b7280",
-                      }}
-                    >
-                      {" "}
-                      — {skill.level}
-                    </span>
-                  )}
-                </span>
-              ))}
+                      padding:
+                        "3px 7px",
+
+                      border:
+                        "1px solid #d1d5db",
+
+                      borderRadius: "3px",
+
+                      fontSize: "9.5px",
+
+                      color: "#1f2937",
+
+                      backgroundColor:
+                        "#f9fafb",
+
+                      maxWidth:
+                        "100%",
+
+                      overflowWrap:
+                        "anywhere",
+                    }}
+                  >
+                    <strong>
+                      {skill?.title ||
+                        "Skill"}
+                    </strong>
+
+                    {skill?.level && (
+                      <span
+                        style={{
+                          color:
+                            "#6b7280",
+                        }}
+                      >
+                        {" "}
+                        —{" "}
+                        {skill.level}
+                      </span>
+                    )}
+                  </span>
+                )
+              )}
             </div>
           </section>
         )}
@@ -526,100 +690,155 @@ const Resume = ({ data = {} }) => {
         {experience.length > 0 && (
           <section
             style={{
-              marginBottom: "15px",
+              marginBottom: "14px",
             }}
           >
             <SectionTitle>
               Experience
             </SectionTitle>
 
-            {experience.map((exp, index) => (
-              <div
-                key={index}
-                style={{
-                  marginBottom: "11px",
-                  breakInside: "avoid",
-                  pageBreakInside: "avoid",
-                }}
-              >
+            {experience.map(
+              (exp, index) => (
                 <div
+                  key={index}
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    gap: "10px",
+                    marginBottom: "10px",
+
+                    breakInside:
+                      "avoid",
+
+                    pageBreakInside:
+                      "avoid",
                   }}
                 >
                   <div
                     style={{
+                      display: "flex",
+
+                      justifyContent:
+                        "space-between",
+
+                      alignItems:
+                        "flex-start",
+
+                      gap: "10px",
+
                       minWidth: 0,
-                      flex: 1,
                     }}
                   >
-                    <h3
+                    <div
                       style={{
-                        margin: 0,
-                        fontSize: "12.5px",
-                        lineHeight: "1.25",
-                        fontWeight: "700",
-                        color: "#111827",
+                        minWidth: 0,
+
+                        flex: 1,
                       }}
                     >
-                      {exp?.jobTitle ||
-                        "Job Title"}
-                    </h3>
-
-                    {(exp?.company ||
-                      exp?.location) && (
-                      <div
+                      <h3
                         style={{
-                          marginTop: "2px",
-                          fontSize: "10.5px",
-                          color: "#4b5563",
-                          fontWeight: "600",
+                          margin: 0,
+
+                          fontSize:
+                            "11.5px",
+
+                          lineHeight:
+                            "1.25",
+
+                          fontWeight:
+                            "700",
+
+                          color:
+                            "#111827",
+
+                          overflowWrap:
+                            "anywhere",
                         }}
                       >
-                        {exp?.company || ""}
+                        {exp?.jobTitle ||
+                          "Job Title"}
+                      </h3>
 
-                        {exp?.company &&
-                        exp?.location
-                          ? " | "
-                          : ""}
+                      {(exp?.company ||
+                        exp?.location) && (
+                        <div
+                          style={{
+                            marginTop:
+                              "2px",
 
-                        {exp?.location || ""}
+                            fontSize:
+                              "10px",
+
+                            color:
+                              "#4b5563",
+
+                            fontWeight:
+                              "600",
+
+                            overflowWrap:
+                              "anywhere",
+                          }}
+                        >
+                          {exp?.company ||
+                            ""}
+
+                          {exp?.company &&
+                          exp?.location
+                            ? " | "
+                            : ""}
+
+                          {exp?.location ||
+                            ""}
+                        </div>
+                      )}
+                    </div>
+
+                    {exp?.duration && (
+                      <div
+                        style={{
+                          flexShrink: 0,
+
+                          fontSize:
+                            "9.5px",
+
+                          color:
+                            "#6b7280",
+
+                          whiteSpace:
+                            "nowrap",
+
+                          textAlign:
+                            "right",
+                        }}
+                      >
+                        {exp.duration}
                       </div>
                     )}
                   </div>
 
-                  {exp?.duration && (
-                    <div
+                  {exp?.responsibility && (
+                    <p
                       style={{
-                        flexShrink: 0,
-                        fontSize: "10px",
-                        color: "#6b7280",
-                        whiteSpace: "nowrap",
-                        textAlign: "right",
+                        margin:
+                          "4px 0 0",
+
+                        fontSize:
+                          "10px",
+
+                        lineHeight:
+                          "1.4",
+
+                        color:
+                          "#374151",
+
+                        overflowWrap:
+                          "anywhere",
                       }}
                     >
-                      {exp.duration}
-                    </div>
+                      {exp.responsibility}
+                    </p>
                   )}
                 </div>
-
-                {exp?.responsibility && (
-                  <p
-                    style={{
-                      margin: "4px 0 0",
-                      fontSize: "10.5px",
-                      lineHeight: "1.45",
-                      color: "#374151",
-                    }}
-                  >
-                    {exp.responsibility}
-                  </p>
-                )}
-              </div>
-            ))}
+              )
+            )}
           </section>
         )}
 
@@ -630,83 +849,122 @@ const Resume = ({ data = {} }) => {
         {education.length > 0 && (
           <section
             style={{
-              marginBottom: "15px",
+              marginBottom: "14px",
             }}
           >
             <SectionTitle>
               Education
             </SectionTitle>
 
-            {education.map((edu, index) => (
-              <div
-                key={index}
-                style={{
-                  marginBottom: "9px",
-                  breakInside: "avoid",
-                  pageBreakInside: "avoid",
-                }}
-              >
+            {education.map(
+              (edu, index) => (
                 <div
+                  key={index}
                   style={{
-                    display: "flex",
-                    justifyContent:
-                      "space-between",
-                    gap: "10px",
+                    marginBottom: "8px",
+
+                    breakInside:
+                      "avoid",
+
+                    pageBreakInside:
+                      "avoid",
                   }}
                 >
                   <div
                     style={{
+                      display: "flex",
+
+                      justifyContent:
+                        "space-between",
+
+                      gap: "10px",
+
                       minWidth: 0,
-                      flex: 1,
                     }}
                   >
-                    <h3
-                      style={{
-                        margin: 0,
-                        fontSize: "12px",
-                        lineHeight: "1.25",
-                        fontWeight: "700",
-                        color: "#111827",
-                      }}
-                    >
-                      {edu?.degree ||
-                        "Degree"}
-                    </h3>
-
                     <div
                       style={{
-                        marginTop: "2px",
-                        fontSize: "10.5px",
-                        color: "#4b5563",
+                        minWidth: 0,
+
+                        flex: 1,
                       }}
                     >
-                      {edu?.university || ""}
+                      <h3
+                        style={{
+                          margin: 0,
 
-                      {edu?.university &&
-                      edu?.location
-                        ? " | "
-                        : ""}
+                          fontSize:
+                            "11.5px",
 
-                      {edu?.location || ""}
+                          lineHeight:
+                            "1.25",
+
+                          fontWeight:
+                            "700",
+
+                          color:
+                            "#111827",
+
+                          overflowWrap:
+                            "anywhere",
+                        }}
+                      >
+                        {edu?.degree ||
+                          "Degree"}
+                      </h3>
+
+                      <div
+                        style={{
+                          marginTop:
+                            "2px",
+
+                          fontSize:
+                            "10px",
+
+                          color:
+                            "#4b5563",
+
+                          overflowWrap:
+                            "anywhere",
+                        }}
+                      >
+                        {edu?.university ||
+                          ""}
+
+                        {edu?.university &&
+                        edu?.location
+                          ? " | "
+                          : ""}
+
+                        {edu?.location ||
+                          ""}
+                      </div>
                     </div>
+
+                    {edu?.graduationYear && (
+                      <div
+                        style={{
+                          flexShrink: 0,
+
+                          fontSize:
+                            "9.5px",
+
+                          color:
+                            "#6b7280",
+
+                          whiteSpace:
+                            "nowrap",
+                        }}
+                      >
+                        {
+                          edu.graduationYear
+                        }
+                      </div>
+                    )}
                   </div>
-
-                  {edu?.graduationYear && (
-                    <div
-                      style={{
-                        flexShrink: 0,
-                        fontSize: "10px",
-                        color: "#6b7280",
-                        whiteSpace:
-                          "nowrap",
-                      }}
-                    >
-                      {edu.graduationYear}
-                    </div>
-                  )}
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </section>
         )}
 
@@ -717,119 +975,162 @@ const Resume = ({ data = {} }) => {
         {projects.length > 0 && (
           <section
             style={{
-              marginBottom: "15px",
+              marginBottom: "14px",
             }}
           >
             <SectionTitle>
               Projects
             </SectionTitle>
 
-            {projects.map((project, index) => {
-              let technologies = [];
+            {projects.map(
+              (project, index) => {
+                let technologies = [];
 
-              if (
-                Array.isArray(
-                  project?.technologiesUsed
-                )
-              ) {
-                technologies =
-                  project.technologiesUsed;
-              } else if (
-                typeof project?.technologiesUsed ===
-                "string"
-              ) {
-                technologies =
-                  project.technologiesUsed
-                    .split(",")
-                    .map((item) =>
-                      item.trim()
-                    )
-                    .filter(Boolean);
-              }
+                if (
+                  Array.isArray(
+                    project?.technologiesUsed
+                  )
+                ) {
+                  technologies =
+                    project.technologiesUsed;
+                } else if (
+                  typeof project?.technologiesUsed ===
+                  "string"
+                ) {
+                  technologies =
+                    project.technologiesUsed
+                      .split(",")
+                      .map((item) =>
+                        item.trim()
+                      )
+                      .filter(Boolean);
+                }
 
-              return (
-                <div
-                  key={index}
-                  style={{
-                    marginBottom: "10px",
-                    breakInside: "avoid",
-                    pageBreakInside:
-                      "avoid",
-                  }}
-                >
-                  <h3
+                return (
+                  <div
+                    key={index}
                     style={{
-                      margin: 0,
-                      fontSize: "12px",
-                      lineHeight: "1.25",
-                      fontWeight: "700",
-                      color: "#111827",
+                      marginBottom:
+                        "9px",
+
+                      breakInside:
+                        "avoid",
+
+                      pageBreakInside:
+                        "avoid",
+
+                      minWidth: 0,
                     }}
                   >
-                    {project?.title ||
-                      "Project"}
-                  </h3>
-
-                  {project?.description && (
-                    <p
+                    <h3
                       style={{
-                        margin:
-                          "3px 0",
-                        fontSize: "10.5px",
-                        lineHeight:
-                          "1.45",
-                        color: "#374151",
-                      }}
-                    >
-                      {project.description}
-                    </p>
-                  )}
+                        margin: 0,
 
-                  {technologies.length >
-                    0 && (
-                    <div
-                      style={{
-                        fontSize: "9.8px",
-                        lineHeight:
-                          "1.4",
-                        color: "#4b5563",
-                      }}
-                    >
-                      <strong>
-                        Technologies:
-                      </strong>{" "}
-                      {technologies.join(
-                        ", "
-                      )}
-                    </div>
-                  )}
-
-                  {project?.githubLink && (
-                    <a
-                      href={
-                        project.githubLink
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display:
-                          "inline-block",
-                        marginTop:
-                          "2px",
                         fontSize:
-                          "9.5px",
+                          "11.5px",
+
+                        lineHeight:
+                          "1.25",
+
+                        fontWeight:
+                          "700",
+
                         color:
-                          "#2563eb",
-                        textDecoration:
-                          "none",
+                          "#111827",
+
+                        overflowWrap:
+                          "anywhere",
                       }}
                     >
-                      GitHub Project
-                    </a>
-                  )}
-                </div>
-              );
-            })}
+                      {project?.title ||
+                        "Project"}
+                    </h3>
+
+                    {project?.description && (
+                      <p
+                        style={{
+                          margin:
+                            "3px 0",
+
+                          fontSize:
+                            "10px",
+
+                          lineHeight:
+                            "1.4",
+
+                          color:
+                            "#374151",
+
+                          overflowWrap:
+                            "anywhere",
+                        }}
+                      >
+                        {
+                          project.description
+                        }
+                      </p>
+                    )}
+
+                    {technologies.length >
+                      0 && (
+                      <div
+                        style={{
+                          fontSize:
+                            "9.5px",
+
+                          lineHeight:
+                            "1.35",
+
+                          color:
+                            "#4b5563",
+
+                          overflowWrap:
+                            "anywhere",
+                        }}
+                      >
+                        <strong>
+                          Technologies:
+                        </strong>{" "}
+                        {technologies.join(
+                          ", "
+                        )}
+                      </div>
+                    )}
+
+                    {project?.githubLink && (
+                      <a
+                        href={
+                          project.githubLink
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display:
+                            "inline-block",
+
+                          marginTop:
+                            "2px",
+
+                          fontSize:
+                            "9px",
+
+                          color:
+                            "#2563eb",
+
+                          textDecoration:
+                            "none",
+
+                          overflowWrap:
+                            "anywhere",
+                        }}
+                      >
+                        GitHub Project
+                      </a>
+                    )}
+                  </div>
+                );
+              }
+            )}
           </section>
         )}
 
@@ -840,7 +1141,7 @@ const Resume = ({ data = {} }) => {
         {certifications.length > 0 && (
           <section
             style={{
-              marginBottom: "15px",
+              marginBottom: "14px",
             }}
           >
             <SectionTitle>
@@ -852,20 +1153,32 @@ const Resume = ({ data = {} }) => {
                 <div
                   key={index}
                   style={{
-                    marginBottom: "7px",
+                    marginBottom:
+                      "7px",
+
                     breakInside:
                       "avoid",
+
                     pageBreakInside:
                       "avoid",
                   }}
                 >
                   <div
                     style={{
-                      fontSize: "11px",
+                      fontSize:
+                        "10.5px",
+
                       lineHeight:
                         "1.3",
-                      fontWeight: "700",
-                      color: "#111827",
+
+                      fontWeight:
+                        "700",
+
+                      color:
+                        "#111827",
+
+                      overflowWrap:
+                        "anywhere",
                     }}
                   >
                     {cert?.title ||
@@ -875,13 +1188,19 @@ const Resume = ({ data = {} }) => {
                   <div
                     style={{
                       fontSize:
-                        "10px",
+                        "9.5px",
+
                       color:
                         "#4b5563",
+
+                      overflowWrap:
+                        "anywhere",
                     }}
                   >
-                    {cert?.issuingOrganization ||
-                      ""}
+                    {
+                      cert?.issuingOrganization ||
+                      ""
+                    }
 
                     {cert?.issuingOrganization &&
                     cert?.year
@@ -903,7 +1222,7 @@ const Resume = ({ data = {} }) => {
         {achievements.length > 0 && (
           <section
             style={{
-              marginBottom: "15px",
+              marginBottom: "14px",
             }}
           >
             <SectionTitle>
@@ -915,9 +1234,12 @@ const Resume = ({ data = {} }) => {
                 <div
                   key={index}
                   style={{
-                    marginBottom: "7px",
+                    marginBottom:
+                      "7px",
+
                     breakInside:
                       "avoid",
+
                     pageBreakInside:
                       "avoid",
                   }}
@@ -925,13 +1247,19 @@ const Resume = ({ data = {} }) => {
                   <div
                     style={{
                       fontSize:
-                        "11px",
+                        "10.5px",
+
                       lineHeight:
                         "1.3",
+
                       fontWeight:
                         "700",
+
                       color:
                         "#111827",
+
+                      overflowWrap:
+                        "anywhere",
                     }}
                   >
                     {achievement?.title ||
@@ -942,15 +1270,20 @@ const Resume = ({ data = {} }) => {
                         style={{
                           marginLeft:
                             "7px",
+
                           fontSize:
-                            "9.5px",
+                            "9px",
+
                           color:
                             "#6b7280",
+
                           fontWeight:
                             "400",
                         }}
                       >
-                        {achievement.year}
+                        {
+                          achievement.year
+                        }
                       </span>
                     )}
                   </div>
@@ -960,12 +1293,18 @@ const Resume = ({ data = {} }) => {
                       style={{
                         marginTop:
                           "2px",
+
                         fontSize:
-                          "10px",
+                          "9.5px",
+
                         lineHeight:
-                          "1.4",
+                          "1.35",
+
                         color:
                           "#374151",
+
+                        overflowWrap:
+                          "anywhere",
                       }}
                     >
                       {
@@ -989,12 +1328,6 @@ const Resume = ({ data = {} }) => {
             style={{
               display: "grid",
 
-              /*
-               * FIX:
-               * Use minmax(0, 1fr) so long text
-               * cannot push the second column
-               * outside the A4 page.
-               */
               gridTemplateColumns:
                 languages.length > 0 &&
                 interests.length > 0
@@ -1002,10 +1335,15 @@ const Resume = ({ data = {} }) => {
                   : "minmax(0, 1fr)",
 
               gap: "20px",
+
               marginBottom: "5px",
 
               breakInside: "avoid",
-              pageBreakInside: "avoid",
+
+              pageBreakInside:
+                "avoid",
+
+              width: "100%",
             }}
           >
             {/* LANGUAGES */}
@@ -1014,6 +1352,8 @@ const Resume = ({ data = {} }) => {
               <div
                 style={{
                   minWidth: 0,
+
+                  maxWidth: "100%",
                 }}
               >
                 <SectionTitle>
@@ -1023,9 +1363,12 @@ const Resume = ({ data = {} }) => {
                 <div
                   style={{
                     display: "flex",
-                    flexWrap:
-                      "wrap",
+
+                    flexWrap: "wrap",
+
                     gap: "5px",
+
+                    maxWidth: "100%",
                   }}
                 >
                   {languages.map(
@@ -1035,22 +1378,33 @@ const Resume = ({ data = {} }) => {
                         style={{
                           display:
                             "inline-block",
+
                           fontSize:
-                            "9.8px",
+                            "9.5px",
+
                           lineHeight:
                             "1.2",
+
                           color:
                             "#374151",
+
                           padding:
                             "4px 7px",
+
                           border:
                             "1px solid #d1d5db",
+
                           borderRadius:
                             "3px",
+
                           maxWidth:
                             "100%",
+
                           overflowWrap:
                             "anywhere",
+
+                          boxSizing:
+                            "border-box",
                         }}
                       >
                         {language?.name ||
@@ -1068,6 +1422,8 @@ const Resume = ({ data = {} }) => {
               <div
                 style={{
                   minWidth: 0,
+
+                  maxWidth: "100%",
                 }}
               >
                 <SectionTitle>
@@ -1077,9 +1433,12 @@ const Resume = ({ data = {} }) => {
                 <div
                   style={{
                     display: "flex",
-                    flexWrap:
-                      "wrap",
+
+                    flexWrap: "wrap",
+
                     gap: "5px",
+
+                    maxWidth: "100%",
                   }}
                 >
                   {interests.map(
@@ -1089,22 +1448,33 @@ const Resume = ({ data = {} }) => {
                         style={{
                           display:
                             "inline-block",
+
                           fontSize:
-                            "9.8px",
+                            "9.5px",
+
                           lineHeight:
                             "1.2",
+
                           color:
                             "#374151",
+
                           padding:
                             "4px 7px",
+
                           border:
                             "1px solid #d1d5db",
+
                           borderRadius:
                             "3px",
+
                           maxWidth:
                             "100%",
+
                           overflowWrap:
                             "anywhere",
+
+                          boxSizing:
+                            "border-box",
                         }}
                       >
                         {interest?.name ||
@@ -1126,8 +1496,9 @@ const Resume = ({ data = {} }) => {
       <div
         style={{
           display: "flex",
-          justifyContent:
-            "center",
+
+          justifyContent: "center",
+
           marginTop: "20px",
         }}
       >
@@ -1136,24 +1507,25 @@ const Resume = ({ data = {} }) => {
           onClick={handleDownloadPdf}
           disabled={downloading}
           style={{
-            padding:
-              "10px 26px",
+            padding: "10px 26px",
+
             border: "none",
-            borderRadius:
-              "7px",
-            background:
-              downloading
-                ? "#9ca3af"
-                : "#2563eb",
+
+            borderRadius: "7px",
+
+            background: downloading
+              ? "#9ca3af"
+              : "#2563eb",
+
             color: "#ffffff",
-            fontSize:
-              "14px",
-            fontWeight:
-              "600",
-            cursor:
-              downloading
-                ? "not-allowed"
-                : "pointer",
+
+            fontSize: "14px",
+
+            fontWeight: "600",
+
+            cursor: downloading
+              ? "not-allowed"
+              : "pointer",
           }}
         >
           {downloading
